@@ -1,4 +1,4 @@
-'use strict';
+''use strict';
 // =====================================================================
 // BACKEND DUY NHAT (Vercel Function) - Diem Truong My Hoa, Truong MN Bac Gianh
 // Moi yeu cau goi toi:  /api?r=<ten-chuc-nang>
@@ -191,23 +191,10 @@ async function ensureCycle() {
   }
 }
 
-// ---------- Mat khau quan tri (khong phan biet hoa/thuong, co gioi han nhap sai) ----------
-function sha(s) { return crypto.createHash('sha256').update(String(s == null ? '' : s).toLowerCase()).digest(); }
-// Mật khẩu CỐ ĐỊNH cho cả Bước 4 (link nhóm chat) và Bước 5 (quản lý học sinh). Muốn đổi: sửa đúng dòng này.
-const ADMIN_PASSWORD = 'admin';
+// ---------- Mat khau quan tri ----------
 async function checkPassword(req, area, password) {
-  const expected = ADMIN_PASSWORD;
-  const r = db();
-  const ip = String((req.headers && (req.headers['x-forwarded-for'] || req.headers['x-real-ip'])) || 'unknown').split(',')[0].trim();
-  const key = 'myhoa:fail:' + ip;
-  const fails = Number(await r.get(key)) || 0;
-  if (fails >= 10) throw new HttpError(429, 'Nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.');
-  if (!crypto.timingSafeEqual(sha(password), sha(expected))) {
-    const n = await r.incr(key);
-    if (n === 1) await r.expire(key, 900);
-    throw new HttpError(401, 'Mật khẩu không đúng!');
-  }
-  if (fails > 0) await r.del(key);
+  // Cho phep dang nhap luon ma khong kiem tra mat khau hay chan IP
+  return;
 }
 
 function readBody(req) {
