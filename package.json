@@ -1,0 +1,9 @@
+{
+  "name": "myhoa-diem-danh-bao-com",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Diem danh va bao com - Diem truong My Hoa - Truong Mam non Bac Gianh (Vercel)",
+  "dependencies": {
+    "@upstash/redis": "^1.28.0"
+  }
+}
