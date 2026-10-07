@@ -1,0 +1,2125 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Điểm Danh & Báo Cơm Tự Động - Phân Hiệu Mỹ Hòa (Hạn Chót 06:00 Sáng)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2pdf library for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Chart.js for interactive visual analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Google Fonts: Be Vietnam Pro & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Be Vietnam Pro"', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                        mono: ['Courier New', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body { 
+            font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .tab-btn-active {
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3), 0 4px 6px -4px rgba(37, 99, 235, 0.2);
+        }
+        @keyframes clockPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.035); opacity: 0.92; }
+        }
+        .clock-pulse { animation: clockPulse 1s ease-in-out infinite; }
+        @keyframes countdownUrgent {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+        .countdown-urgent { animation: countdownUrgent 0.6s ease-in-out infinite; }
+        @keyframes countdownGlow {
+            0%, 100% { text-shadow: 0 0 6px currentColor; }
+            50% { text-shadow: 0 0 16px currentColor; }
+        }
+        .countdown-glow { animation: countdownGlow 1.5s ease-in-out infinite; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans antialiased selection:bg-blue-500 selection:text-white">
+
+    <!-- HEADER HỆ THỐNG -->
+    <header class="bg-gradient-to-r from-blue-700 via-indigo-700 to-teal-700 text-white shadow-xl sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-white/25 backdrop-blur-md rounded-2xl text-3xl sm:text-4xl shadow-inner border border-white/20">
+                    🏫
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight uppercase text-amber-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]">
+                        TRƯỜNG MẦM NON BẮC GIANH
+                    </h1>
+                    <div class="text-sm sm:text-base font-bold tracking-wide text-white/90 mt-0.5">
+                        Điểm Trường Mỹ Hòa
+                    </div>
+                    <p class="text-xs sm:text-sm text-blue-100 font-medium flex items-center gap-2 mt-1">
+                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                        Hệ Thống Điểm Danh & Tự Động Trừ Tiền Suất Ăn Theo Thời Gian Thực
+                    </p>
+                </div>
+            </div>
+
+            <!-- Đồng hồ thời gian thực -->
+            <div class="flex items-center gap-3 sm:gap-4 bg-black/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/20 shadow-md">
+                <div class="text-right">
+                    <div id="realtimeClock" class="text-4xl sm:text-5xl font-mono font-black tracking-widest text-amber-300 drop-shadow-[0_0_10px_rgba(252,211,77,0.6)] clock-pulse">00:00:00</div>
+                    <div id="realtimeDate" class="text-[11px] text-blue-100 font-medium">Thứ ..., --/--/----</div>
+                </div>
+                <div class="h-8 w-px bg-white/20"></div>
+                <div>
+                    <span id="cutoffStatusBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500 text-white shadow">
+                        Đang kết nối hệ thống...
+                    </span>
+                    <div id="countdownTimer" class="mt-1.5 text-center font-mono font-black text-sm sm:text-base tracking-wider text-white">
+                        --:--:--
+                    </div>
+                    <div id="countdownLabel" class="text-[10px] text-blue-100 font-semibold text-center uppercase tracking-wide">
+                        Đang tính...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div id="serverBanner" class="hidden mx-3 mt-3 p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs font-bold"></div>
+    <div id="bootErrorBanner" class="hidden mx-3 mt-3 p-3 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 text-xs font-bold"></div>
+
+    <!-- THÂN CHÍNH HỆ THỐNG -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full space-y-6">
+        
+        <!-- THÔNG BÁO QUY ĐỊNH HẠN CHÓT BÁO CƠM -->
+        <div class="bg-amber-50/90 border-l-4 border-amber-500 p-4 sm:p-5 rounded-r-2xl shadow-sm relative overflow-hidden border-t border-b border-r border-amber-200">
+            <div class="flex items-start gap-3.5">
+                <div class="p-2 bg-amber-500 text-white rounded-xl text-lg shadow-sm mt-0.5"><i class="fa-solid fa-bell"></i></div>
+                <div class="flex-grow space-y-2">
+                    <h2 class="text-sm sm:text-base font-extrabold text-amber-900 uppercase tracking-wide flex items-center gap-2">
+                        📌 QUY ĐỊNH BÁO CƠM TỪ 18:00 TỚI 06:00 SÁNG HÔM SAU (PHÂN HIỆU MỸ HÒA)
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs sm:text-sm text-amber-900 font-medium">
+                        <div class="bg-white/70 p-2.5 rounded-xl border border-amber-200/60 shadow-2xs">
+                            <strong class="text-amber-800">1. Khung giờ báo cơm chuẩn:</strong> Đăng ký ăn hoặc báo nghỉ thực hiện <strong>từ 18:00 chiều hôm trước đến 06:00 sáng ngày ăn</strong>.
+                        </div>
+                        <div class="bg-white/70 p-2.5 rounded-xl border border-amber-200/60 shadow-2xs">
+                            <strong class="text-amber-800">2. Khóa toàn bộ lựa chọn sau 06:00 sáng:</strong> Qua 06:00 sáng, hệ thống tự động chốt sổ và <strong>khóa cả nút Đăng ký ăn lẫn Báo nghỉ</strong> - phụ huynh không thể thay đổi lựa chọn nữa.
+                        </div>
+                        <div class="bg-white/70 p-2.5 rounded-xl border border-amber-200/60 shadow-2xs">
+                            <strong class="text-amber-800">3. Chưa phản hồi trước 06:00 sáng = Báo muộn:</strong> Bé nào chưa được đăng ký/báo nghỉ trước giờ chốt sẽ <strong>tự động chuyển thành "Báo muộn"</strong> và bị trừ tiền không hoàn lại (20.000đ/suất).
+                        </div>
+                        <div class="bg-white/70 p-2.5 rounded-xl border border-amber-200/60 shadow-2xs">
+                            <strong class="text-amber-800">4. Tự động reset lúc 17:30 (Trừ T6, T7):</strong> Tự động mở lại cổng đăng ký ăn cho ngày tiếp theo lúc 17:30 hằng ngày (Trừ chiều Thứ 6 & Thứ 7).
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BẢNG CHỌN 8 LỚP HỌC CHI TIẾT -->
+        <section class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                <div>
+                    <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                        <span class="p-2 bg-gradient-to-tr from-amber-400 to-orange-500 text-white rounded-xl shadow-sm text-base">🏫</span>
+                        CHỌN 8 LỚP ĐỂ XEM ĐIỂM DANH & QUẢN LÝ TRỪ TIỀN (PHÂN HIỆU MỸ HÒA)
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-1">Bấm trực tiếp vào lớp bên dưới để chuyển xem danh sách lập tức.</p>
+                </div>
+                <div id="activeClassBadge" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md flex items-center gap-2.5 self-start md:self-auto border border-blue-400">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span id="activeClassNameText">Đang chọn: Bé A (Khối Bé)</span>
+                </div>
+            </div>
+            
+            <div id="classTabsContainer" class="space-y-3">
+                <!-- Render 4 Khối & 8 Lớp -->
+            </div>
+        </section>
+
+        <!-- ĐIỀU HƯỚNG TAB QUẢN LÝ (5 BƯỚC) -->
+        <div class="bg-slate-200/80 p-1.5 rounded-2xl shadow-inner border border-slate-300">
+            <nav class="grid grid-cols-2 md:grid-cols-5 gap-2" aria-label="Main Navigation">
+                <button onclick="switchTab('parentTab')" id="tabNav-parentTab" 
+                    class="tab-btn p-3 rounded-xl font-extrabold text-xs sm:text-sm flex flex-col items-center justify-center text-center transition-all shadow-md bg-blue-600 text-white ring-2 ring-blue-400 tab-btn-active">
+                    <div class="flex items-center gap-1.5 text-[11px] text-blue-100 uppercase font-bold tracking-wider">
+                        <span>BƯỚC 1</span> 🍱
+                    </div>
+                    <span class="mt-0.5 tracking-tight text-xs sm:text-sm">1. BÁO CƠM (PHỤ HUYNH)</span>
+                </button>
+
+                <button onclick="switchTab('teacherTab')" id="tabNav-teacherTab" 
+                    class="tab-btn p-3 rounded-xl font-extrabold text-xs sm:text-sm flex flex-col items-center justify-center text-center transition-all bg-white text-slate-700 hover:bg-slate-50 border border-slate-200">
+                    <div class="flex items-center gap-1.5 text-[11px] text-slate-400 uppercase font-bold tracking-wider">
+                        <span>BƯỚC 2</span> 📋
+                    </div>
+                    <span class="mt-0.5 tracking-tight text-xs sm:text-sm">2. ĐIỂM DANH (CÔ GIÁO)</span>
+                </button>
+
+                <button onclick="switchTab('rebalanceTab')" id="tabNav-rebalanceTab" 
+                    class="tab-btn p-3 rounded-xl font-extrabold text-xs sm:text-sm flex flex-col items-center justify-center text-center transition-all bg-white text-slate-700 hover:bg-slate-50 border border-slate-200">
+                    <div class="flex items-center gap-1.5 text-[11px] text-slate-400 uppercase font-bold tracking-wider">
+                        <span>BƯỚC 3</span> 📊
+                    </div>
+                    <span class="mt-0.5 tracking-tight text-xs sm:text-sm">3. CÂN ĐỐI & BIỂU ĐỒ</span>
+                </button>
+
+                <button onclick="switchTab('chatGroupTab')" id="tabNav-chatGroupTab" 
+                    class="tab-btn p-3 rounded-xl font-extrabold text-xs sm:text-sm flex flex-col items-center justify-center text-center transition-all bg-white text-slate-700 hover:bg-slate-50 border border-slate-200">
+                    <div class="flex items-center gap-1.5 text-[11px] text-slate-400 uppercase font-bold tracking-wider">
+                        <span>BƯỚC 4</span> 💬
+                    </div>
+                    <span class="mt-0.5 tracking-tight text-xs sm:text-sm">4. LINK NHÓM CHAT / ZALO</span>
+                </button>
+
+                <button onclick="switchTab('studentMgmtTab')" id="tabNav-studentMgmtTab" 
+                    class="tab-btn p-3 rounded-xl font-extrabold text-xs sm:text-sm flex flex-col items-center justify-center text-center transition-all bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 col-span-2 md:col-span-1">
+                    <div class="flex items-center gap-1.5 text-[11px] text-slate-400 uppercase font-bold tracking-wider">
+                        <span>BƯỚC 5</span> 📥
+                    </div>
+                    <span class="mt-0.5 tracking-tight text-xs sm:text-sm">5. NHẬP EXCEL & ADMIN</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- TAB 1: BÁO CƠM PHỤ HUYNH -->
+        <section id="parentTab" class="tab-content bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <h3 class="font-extrabold text-blue-900 text-base sm:text-lg flex items-center gap-2">
+                        <span>🍱</span> <span id="currentParentClassName" class="text-blue-600">LỚP MẦM A (TRẺ NHỎ)</span> - PHỤ HUYNH ĐĂNG KÝ BÁO CƠM (PHÂN HIỆU MỸ HÒA)
+                    </h3>
+                    <p class="text-xs sm:text-sm text-blue-700 mt-1 font-medium">
+                        Hạn chót báo cơm: Từ 18:00 chiều hôm trước đến 06:00 sáng ngày ăn. <strong>Sau 06:00 sáng, hệ thống tự động khóa toàn bộ lựa chọn</strong> (không đổi được nữa) - bé nào chưa phản hồi sẽ tự động thành "Báo muộn" và bị trừ 20.000đ/suất.
+                    </p>
+                </div>
+                <div class="flex items-center gap-2 self-end md:self-auto">
+                    <span class="text-xs font-bold text-slate-600">Sĩ số lớp hiện tại:</span>
+                    <span id="parentClassCount" class="px-3 py-1 bg-blue-600 text-white rounded-lg font-black text-sm shadow-sm">0</span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto custom-scrollbar border border-slate-200 rounded-xl">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
+                            <th class="p-3.5 text-center w-12">STT</th>
+                            <th class="p-3.5">Họ và Tên Học Sinh</th>
+                            <th class="p-3.5 text-center">Trạng Thái Báo Cơm</th>
+                            <th class="p-3.5 text-center">Thời Gian Báo</th>
+                            <th class="p-3.5">Phần Trừ Tiền (Không Hoàn Lại)</th>
+                            <th class="p-3.5 text-right">Thao Tác Tích Chọn</th>
+                        </tr>
+                    </thead>
+                    <tbody id="parentStudentTable" class="divide-y divide-slate-100 text-sm font-medium">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- TAB 2: GIÁO VIÊN ĐIỂM DANH & CHỐT BẾP -->
+        <section id="teacherTab" class="tab-content hidden bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div class="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 text-center">
+                    <div class="text-xs font-bold text-blue-600 uppercase tracking-wider">Sĩ Số Lớp</div>
+                    <div id="statTotal" class="text-2xl font-black text-blue-900 mt-1">0</div>
+                </div>
+                <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-center">
+                    <div class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Đã Báo Ăn (Chốt Bếp)</div>
+                    <div id="statPresent" class="text-2xl font-black text-emerald-900 mt-1">0</div>
+                </div>
+                <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-center">
+                    <div class="text-xs font-bold text-amber-600 uppercase tracking-wider">Nghỉ Đúng (18h - 06h)</div>
+                    <div id="statAbsentEarly" class="text-2xl font-black text-amber-900 mt-1">0</div>
+                </div>
+                <div class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-center">
+                    <div class="text-xs font-bold text-rose-600 uppercase tracking-wider">Nghỉ Muộn (>06h sáng)</div>
+                    <div id="statAbsentLate" class="text-2xl font-black text-rose-900 mt-1">0</div>
+                </div>
+                <div class="p-3.5 rounded-2xl bg-purple-50 border border-purple-200 text-center col-span-2 md:col-span-1">
+                    <div class="text-xs font-bold text-purple-600 uppercase tracking-wider">Tổng Trừ (Báo Muộn)</div>
+                    <div id="statTotalDeduction" class="text-xl font-black text-purple-900 mt-1">0 đ</div>
+                </div>
+            </div>
+
+            <div class="flex flex-col md:flex-row justify-between items-center gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                <div class="space-y-1">
+                    <h4 id="teacherClassTitle" class="font-bold text-slate-800 text-sm sm:text-base">
+                        DANH SÁCH ĐIỂM DANH LỚP ...
+                    </h4>
+                    <p id="kitchenLockStatusNotice" class="text-xs font-extrabold text-emerald-700 flex items-center gap-1">
+                        <i class="fa-solid fa-lock"></i> Đang mở cổng nhận báo cơm từ 18:00 đến 06:00 sáng hôm sau.
+                    </p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="exportTeacherReportTXT()" class="px-3.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 shadow-sm transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-lines"></i> Xuất Báo Cáo Chốt Bếp (.TXT)
+                    </button>
+                    <button onclick="exportTeacherReportPDF()" class="px-3.5 py-1.5 bg-rose-600 text-white rounded-lg text-xs font-bold hover:bg-rose-700 shadow-sm transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-pdf"></i> Xuất File PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- CONTAINER CONTAINER XUẤT FILE PDF -->
+            <div id="pdfExportContainer" class="hidden bg-white p-6 rounded-xl border border-slate-300 space-y-4 text-slate-900 font-sans">
+                <div class="text-center border-b pb-4 space-y-1">
+                    <div class="text-xs font-bold uppercase tracking-wider text-blue-700">TRƯỜNG MẦM NON BẮC GIANH - PHÂN HIỆU MỸ HÒA</div>
+                    <h2 id="pdfReportTitle" class="text-lg font-extrabold uppercase">BÁO CÁO CHỐT BẾP & SUẤT ĂN HỌC SINH</h2>
+                    <div id="pdfReportTime" class="text-xs text-slate-500">Thời gian chốt: --/--/---- --:--:--</div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-2 text-xs py-2 font-bold text-center bg-slate-100 p-3 rounded-lg">
+                    <div>Tổng số học sinh: <span id="pdfStatTotal">0</span></div>
+                    <div>Số suất đăng ký ăn: <span id="pdfStatEating">0</span></div>
+                    <div>Số báo nghỉ (Có/Muộn): <span id="pdfStatAbsent">0</span></div>
+                </div>
+
+                <table class="w-full text-left border-collapse text-xs mt-4">
+                    <thead>
+                        <tr class="bg-slate-200 text-slate-800 uppercase font-bold border-b border-slate-300">
+                            <th class="p-2 text-center w-10 border border-slate-300">STT</th>
+                            <th class="p-2 border border-slate-300">Họ và Tên Học Sinh</th>
+                            <th class="p-2 text-center border border-slate-300">Trạng Thái Báo Cơm</th>
+                            <th class="p-2 text-center border border-slate-300">Thời Gian Báo</th>
+                            <th class="p-2 border border-slate-300">Ghi Chú / Trừ Tiền Báo Muộn</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pdfTableBody">
+                        <!-- Rendered for PDF -->
+                    </tbody>
+                </table>
+                <div class="pt-6 flex justify-between text-xs font-bold text-slate-700">
+                    <div>Xác nhận của nhà bếp</div>
+                    <div>Giáo viên chủ nhiệm lớp</div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto custom-scrollbar border border-slate-200 rounded-xl">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
+                            <th class="p-3.5 text-center w-12">STT</th>
+                            <th class="p-3.5">Họ và Tên Học Sinh</th>
+                            <th class="p-3.5 text-center">Báo Cơm (18h - 06h)</th>
+                            <th class="p-3.5 text-center">Báo Nghỉ Muộn (>06h Sáng)</th>
+                            <th class="p-3.5 text-center">Điểm Danh Thực Tế</th>
+                            <th class="p-3.5 text-center">Số Tiền Trừ (Báo Muộn)</th>
+                            <th class="p-3.5">Lý Do / Ghi Chú Chốt Bếp</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teacherStudentTable" class="divide-y divide-slate-100 text-sm font-medium">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- TAB 3: CÂN ĐỐI SUẤT ĂN & BIỂU ĐỒ TRỰC QUAN -->
+        <section id="rebalanceTab" class="tab-content hidden bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+            <div class="bg-purple-50 border border-purple-200 p-4 rounded-xl space-y-1">
+                <h3 class="font-extrabold text-purple-900 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-purple-600"></i>
+                    BIỂU ĐỒ ĐỒ THỊ THỐNG KÊ & CÂN ĐỐI SUẤT ĂN - PHÂN HIỆU MỸ HÒA
+                </h3>
+                <p class="text-xs sm:text-sm text-purple-700 font-medium">
+                    Theo dõi trực quan tình hình đi học / báo cơm của học sinh qua các ngày trong tuần và các tháng trong năm.
+                </p>
+            </div>
+
+            <!-- BIỂU ĐỒ ĐỒ THỊ TRỰC QUAN -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Biểu đồ các ngày trong tuần -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                        <h4 class="font-extrabold text-slate-800 text-xs sm:text-sm uppercase flex items-center gap-2">
+                            <i class="fa-solid fa-chart-column text-blue-600"></i> Tình Hình Báo Cơm Các Ngày Trong Tuần
+                        </h4>
+                        <span class="text-[11px] font-bold text-blue-600 bg-blue-100 px-2.5 py-0.5 rounded-full">Thứ 2 - Thứ 6</span>
+                    </div>
+                    <div class="relative h-64 w-full">
+                        <canvas id="weeklyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Biểu đồ các tháng trong năm -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                        <h4 class="font-extrabold text-slate-800 text-xs sm:text-sm uppercase flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line text-emerald-600"></i> Tỉ Lệ Đi Học / Báo Cơm Các Tháng Trong Năm
+                        </h4>
+                        <span class="text-[11px] font-bold text-emerald-600 bg-emerald-100 px-2.5 py-0.5 rounded-full">Năm Học 2026</span>
+                    </div>
+                    <div class="relative h-64 w-full">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 shadow-2xs space-y-3">
+                <div class="flex items-center justify-between pb-2 border-b border-amber-200">
+                    <h4 class="font-extrabold text-amber-900 text-xs sm:text-sm uppercase flex items-center gap-2">
+                        <i class="fa-solid fa-coins text-amber-600"></i> Tổng Tiền Trừ Theo Lớp
+                    </h4>
+                    <span id="monthlyDeductionMonth" class="text-[11px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full">Tháng này</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead><tr class="text-left text-amber-900"><th class="py-1.5">Lớp</th><th class="py-1.5 text-center">Lượt báo muộn</th><th class="py-1.5 text-right">Số tiền trừ</th></tr></thead>
+                        <tbody id="monthlyDeductionBody"></tbody>
+                    </table>
+                </div>
+                <p class="text-[10px] text-amber-700">Gồm các ngày đã chốt trong tháng + hôm nay (đang diễn ra). Dùng để đối chiếu với phụ huynh.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="classMealOverviewGrid">
+                <!-- Rendered by JS -->
+            </div>
+
+            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 max-w-2xl mx-auto space-y-4">
+                <h4 class="font-extrabold text-slate-800 text-sm uppercase text-center tracking-wide">
+                    Thực Hiện Điều Chuyển Suất Ăn Giữa Hai Lớp
+                </h4>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">Lớp chuyển suất dư:</label>
+                        <select id="transferFromClass" class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-purple-500">
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">Lớp nhận suất ăn:</label>
+                        <select id="transferToClass" class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-purple-500">
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">Số suất điều chuyển:</label>
+                        <input type="number" id="transferQuantity" min="1" value="1" class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">Lý do điều chuyển ghi nhận:</label>
+                        <input type="text" id="transferReason" value="Cân đối suất ăn phát sinh" class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                </div>
+
+                <button onclick="executeMealTransfer()" class="w-full py-3 bg-purple-600 text-white rounded-xl font-bold text-xs sm:text-sm hover:bg-purple-700 shadow-md transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-right-arrow-left"></i> Xác Nhận Điều Chuyển Suất Ăn
+                </button>
+            </div>
+        </section>
+
+        <!-- TAB 4: CẤU HÌNH LINK NHÓM CHAT (MESSENGER / ZALO) -->
+        <section id="chatGroupTab" class="tab-content hidden bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-5 rounded-2xl space-y-3">
+                <h3 class="font-extrabold text-blue-900 text-base sm:text-lg flex items-center gap-2">
+                    <span>⚡</span> GỬI NHANH THEO LỚP (CẦN MẬT KHẨU QUẢN TRỊ)
+                </h3>
+                <p class="text-xs sm:text-sm text-blue-800 font-medium">
+                    Bấm vào lớp cần gửi → nhập mật khẩu quản trị → nhóm chat mở ra với nội dung nhắc nhở (Messenger điền sẵn, Zalo đã copy sẵn) - chỉ cần bấm Gửi. Link nhóm được giữ riêng tư: không có mật khẩu thì không lấy được link.
+                </p>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="quickSendGrid">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+
+            <div id="chatAdminLoginGate" class="max-w-md mx-auto bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-300 p-6 rounded-2xl text-center space-y-4 shadow-sm my-6">
+                <div class="w-14 h-14 bg-emerald-600 text-white rounded-2xl mx-auto flex items-center justify-center text-2xl shadow-md">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <div class="space-y-1">
+                    <h3 class="font-extrabold text-emerald-900 text-base sm:text-lg">XÁC THỰC QUẢN TRỊ VIÊN - BƯỚC 4</h3>
+                    <p class="text-xs text-emerald-800 font-medium">Vui lòng nhập mật khẩu quản trị để cấu hình đường dẫn liên kết nhóm chat cho từng lớp/khối.</p>
+                </div>
+                <div class="space-y-3 pt-2">
+                    <input type="password" id="chatAdminPasswordInput" placeholder="Nhập mật khẩu admin..." autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go"
+                        onkeydown="if(event.key==='Enter') verifyChatAdminPassword()"
+                        class="w-full p-3 bg-white border border-emerald-300 rounded-xl text-sm font-bold text-center outline-none focus:ring-2 focus:ring-emerald-500">
+                    <button onclick="verifyChatAdminPassword()" class="w-full py-3 bg-emerald-600 text-white font-extrabold rounded-xl text-xs sm:text-sm hover:bg-emerald-700 shadow-md transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-key"></i> Mở Khóa Cấu Hình Link Nhóm
+                    </button>
+                    <button type="button" onclick="togglePasswordVisibility('chatAdminPasswordInput')" class="text-[11px] font-bold text-slate-500 underline">Hiện / ẩn mật khẩu đang gõ</button>
+                    <button type="button" onclick="runServerDiagnosis('chatAdminLoginMsg')" class="text-[11px] font-bold text-blue-600 underline">🔧 Kiểm tra kết nối máy chủ</button>
+                    <div id="chatAdminLoginMsg" class="hidden p-2.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-700 text-xs font-bold"></div>
+                </div>
+            </div>
+
+            <div id="chatAdminContentArea" class="hidden space-y-6">
+                <div class="flex items-center justify-between bg-slate-100 p-3.5 rounded-xl border border-slate-200">
+                    <div class="flex items-center gap-2 text-emerald-800 font-bold text-xs">
+                        <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i> Đã xác thực quyền quản trị viên Bước 4!
+                    </div>
+                    <button onclick="lockChatAdminSession()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-lock"></i> Khóa Lại
+                    </button>
+                </div>
+
+                <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 p-5 rounded-2xl space-y-4">
+                    <h3 class="font-extrabold text-emerald-900 text-base sm:text-lg flex items-center gap-2">
+                        <span>💬</span> CẤU HÌNH ĐƯỜNG DẪN LINK NHÓM FACEBOOK MESSENGER / ZALO CHO TỪNG KHỐI VÀ LỚP
+                    </h3>
+                    <p class="text-xs sm:text-sm text-emerald-800 font-medium">
+                        Cấu hình các đường dẫn nhóm chat riêng biệt cho từng lớp. Hệ thống dùng các link này để gửi tin nhắn nhắc nhở tự động lúc 17:30 hằng ngày (trừ Thứ 6 & Thứ 7).
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="classMessengerUrlConfigGrid">
+                        <!-- Rendered by JS -->
+                    </div>
+
+                    <div class="flex flex-wrap gap-3 pt-2">
+                        <button onclick="saveAllMessengerUrls()" class="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-sm transition flex items-center gap-2">
+                            <i class="fa-solid fa-floppy-disk mr-1"></i> Lưu Tất Cả Đường Dẫn Nhóm
+                        </button>
+                        <button onclick="trigger1730Simulation()" class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-sm transition flex items-center gap-2">
+                            <i class="fa-solid fa-paper-plane"></i> Gửi Tin Nhắn Nhắc Nhở 17:30 Lập Tức
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-3">
+                    <h4 class="font-extrabold text-slate-800 text-sm uppercase">Mẫu Thông Báo Nhắc Nhở 17:30 Hằng Ngày</h4>
+                    <textarea readonly rows="4" class="w-full p-3 bg-white rounded-xl border border-slate-200 text-xs font-mono text-slate-700 outline-none">Kính gửi Quý phụ huynh Phân hiệu Mỹ Hòa,
+Hệ thống mở cổng nhận báo cơm từ 18:00 chiều nay đến 06:00 sáng mai. Kính mong Quý phụ huynh đăng ký hoặc báo nghỉ đúng giờ. Sau 06:00 sáng, hệ thống tự động khóa toàn bộ lựa chọn - bé nào chưa phản hồi sẽ tự động chuyển thành "Báo muộn" và bị trừ 20.000đ/suất (không hoàn lại). (Chú ý: Chiều thứ 6 và thứ 7 không báo tự động). Xin cảm ơn!</textarea>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: QUẢN TRỊ ADMIN & NHẬP DỮ LIỆU EXCEL -->
+        <section id="studentMgmtTab" class="tab-content hidden bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+            <div id="adminLoginGate" class="max-w-md mx-auto bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 p-6 rounded-2xl text-center space-y-4 shadow-sm my-6">
+                <div class="w-14 h-14 bg-amber-500 text-white rounded-2xl mx-auto flex items-center justify-center text-2xl shadow-md">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div class="space-y-1">
+                    <h3 class="font-extrabold text-amber-900 text-base sm:text-lg">KHU VỰC QUẢN TRỊ VIÊN (ADMIN) - BƯỚC 5</h3>
+                    <p class="text-xs text-amber-800 font-medium">Vui lòng nhập mật khẩu quản trị để truy cập chức năng nhập Excel và cài đặt hệ thống Phân hiệu Mỹ Hòa.</p>
+                </div>
+                <div class="space-y-3 pt-2">
+                    <input type="password" id="adminPasswordInput" placeholder="Nhập mật khẩu admin..." autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go"
+                        onkeydown="if(event.key==='Enter') verifyAdminPassword()"
+                        class="w-full p-3 bg-white border border-amber-300 rounded-xl text-sm font-bold text-center outline-none focus:ring-2 focus:ring-amber-500">
+                    <button onclick="verifyAdminPassword()" class="w-full py-3 bg-amber-600 text-white font-extrabold rounded-xl text-xs sm:text-sm hover:bg-amber-700 shadow-md transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-key"></i> Xác Thực Mật Khẩu Truy Cập
+                    </button>
+                    <button type="button" onclick="togglePasswordVisibility('adminPasswordInput')" class="text-[11px] font-bold text-slate-500 underline">Hiện / ẩn mật khẩu đang gõ</button>
+                    <button type="button" onclick="runServerDiagnosis('adminLoginMsg')" class="text-[11px] font-bold text-blue-600 underline">🔧 Kiểm tra kết nối máy chủ</button>
+                    <div id="adminLoginMsg" class="hidden p-2.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-700 text-xs font-bold"></div>
+                </div>
+            </div>
+
+            <div id="adminContentArea" class="hidden space-y-6">
+                <div class="flex items-center justify-between bg-slate-100 p-3.5 rounded-xl border border-slate-200">
+                    <div class="flex items-center gap-2 text-emerald-800 font-bold text-xs">
+                        <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i> Đã xác thực quyền quản trị viên thành công!
+                    </div>
+                    <button onclick="lockAdminSession()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-lock"></i> Khóa Lại (Đăng Xuất)
+                    </button>
+                </div>
+
+                <div id="backupReminderBanner" class="hidden bg-amber-50 border-2 border-amber-400 p-3.5 rounded-2xl text-amber-900 text-xs sm:text-sm font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                    <span id="backupReminderText"></span>
+                </div>
+
+                <div class="bg-gradient-to-r from-slate-50 to-slate-100 border border-slate-300 p-5 rounded-2xl space-y-3">
+                    <div class="flex items-center gap-2 text-slate-900 font-extrabold text-base">
+                        <span>💾</span> SAO LƯU & KHÔI PHỤC DỮ LIỆU
+                    </div>
+                    <p class="text-xs sm:text-sm text-slate-600 font-medium">
+                        Dữ liệu chỉ lưu trên trình duyệt này. Nếu xoá lịch sử duyệt web / cache, dữ liệu sẽ mất. Hãy tải file sao lưu định kỳ (mỗi tuần) để phòng ngừa mất dữ liệu.
+                    </p>
+                    <div id="lastBackupInfo" class="text-[11px] text-slate-500 font-medium"></div>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <button onclick="exportFullBackupJSON()" class="flex-1 py-2.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-900 shadow-md transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-download"></i> Tải File Sao Lưu (.json)
+                        </button>
+                        <label class="flex-1 py-2.5 bg-white border-2 border-slate-300 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-md transition flex items-center justify-center gap-2 cursor-pointer">
+                            <i class="fa-solid fa-upload"></i> Khôi Phục Từ File
+                            <input type="file" accept=".json" class="hidden" onchange="importFullBackupJSON(event)">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-300 p-5 rounded-2xl space-y-3">
+                    <div class="flex items-center gap-2 text-blue-900 font-extrabold text-base">
+                        <span>➕</span> THÊM MỚI HỌC SINH THỦ CÔNG (TỪNG BÉ) - PHÂN HIỆU MỸ HÒA
+                    </div>
+                    <p class="text-xs sm:text-sm text-blue-800 font-medium">
+                        Nhập thông tin trực tiếp để thêm học sinh mới vào lớp tương ứng.
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Họ và tên học sinh:</label>
+                            <input type="text" id="manualStudentName" placeholder="Ví dụ: Nguyễn Văn An" class="w-full p-2.5 bg-white border border-blue-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Chọn lớp:</label>
+                            <select id="manualStudentClass" class="w-full p-2.5 bg-white border border-blue-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500">
+                                <!-- Rendered by JS -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Thông tin phụ huynh / SĐT:</label>
+                            <input type="text" id="manualParentInfo" placeholder="Ví dụ: Mẹ Lan - 0988123456" class="w-full p-2.5 bg-white border border-blue-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="handleManualAddStudent()" class="w-full py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-md transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-user-plus"></i> Thêm Học Sinh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-300 p-5 rounded-2xl space-y-3">
+                    <div class="flex items-center gap-2 text-emerald-900 font-extrabold text-base">
+                        <span>📥</span> NHẬP DANH SÁCH HỌC SINH HÀNG LOẠT TỪ EXCEL (1 LẦN DUY NHẤT)
+                    </div>
+                    <p class="text-xs sm:text-sm text-emerald-800 font-medium leading-relaxed">
+                        Bạn có thể sao chép bảng từ Excel (gồm các cột: <strong>Họ và Tên</strong> | <strong>Mã Lớp [NT_A, NT_B, MAM_A, MAM_B, CHOI_A, CHOI_B, LA_A, LA_B]</strong> | <strong>Thông Tin Phụ Huynh</strong>) rồi dán vào ô bên dưới, hoặc tải tệp lên.
+                    </p>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Dán dữ liệu từ Excel (Định dạng: Tên [Tab] MãLớp [Tab] SĐT/PhụHuynh):</label>
+                            <textarea id="excelPasteArea" rows="4" placeholder="Nguyễn Văn An	MAM_A	Mẹ Lan - 0988123456&#10;Trần Thị Bình	MAM_A	Bố Hùng - 0912345678" class="w-full p-3 bg-white border border-emerald-300 rounded-xl text-xs font-mono text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-3 items-center justify-between">
+                            <button onclick="handleBulkExcelImport()" class="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-sm transition flex items-center gap-2">
+                                <i class="fa-solid fa-file-excel"></i> Nhập Dữ Liệu Hàng Loạt
+                            </button>
+                            
+                            <div class="flex items-center gap-2">
+                                <button onclick="resetForNewDay()" class="px-4 py-2.5 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 shadow-sm transition flex items-center gap-2">
+                                    <i class="fa-solid fa-rotate-right"></i> Khởi Tạo Chu Kì Mới
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <h4 class="font-extrabold text-slate-800 text-sm uppercase">Danh Sách Học Sinh Phân Hiệu Mỹ Hòa</h4>
+                    <span id="totalSchoolStudentsCount" class="px-3 py-1 bg-slate-200 text-slate-800 rounded-full text-xs font-black">0 học sinh</span>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar border border-slate-200 rounded-xl max-h-[400px]">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="sticky top-0 bg-slate-100 z-10">
+                            <tr class="text-slate-700 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
+                                <th class="p-3.5 text-center w-12">STT</th>
+                                <th class="p-3.5">Họ và Tên</th>
+                                <th class="p-3.5">Lớp</th>
+                                <th class="p-3.5">Thông Tin Phụ Huynh</th>
+                                <th class="p-3.5 text-right">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentMgmtTable" class="divide-y divide-slate-100 text-sm font-medium">
+                            <!-- Rendered by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- THÔNG BÁO TOAST POPUP -->
+    <div id="customToast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-slate-900/95 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 backdrop-blur-md">
+            <span id="toastIcon" class="text-emerald-400 text-xl"><i class="fa-solid fa-circle-check"></i></span>
+            <span id="toastMessage" class="text-xs sm:text-sm font-semibold tracking-wide">Thông báo hệ thống</span>
+        </div>
+    </div>
+
+    <!-- LOGIC XỬ LÝ HỆ THỐNG PHÂN HIỆU MỸ HÒA -->
+    <script>
+        const DEFAULT_CLASSES = [
+            { id: 'NT_A', name: 'Trẻ A', group: 'Khối Trẻ (18 - 36 Tháng)', badge: 'Trẻ A', color: 'border-pink-300 text-pink-800 bg-pink-50', icon: '👶' },
+            { id: 'NT_B', name: 'Trẻ B', group: 'Khối Trẻ (18 - 36 Tháng)', badge: 'Trẻ B', color: 'border-pink-300 text-pink-800 bg-pink-50', icon: '👼' },
+            
+            { id: 'MAM_A', name: 'Bé A', group: 'Khối Bé (3 - 4 Tuổi)', badge: 'Bé A', color: 'border-emerald-300 text-emerald-800 bg-emerald-50', icon: '🧒' },
+            { id: 'MAM_B', name: 'Bé B', group: 'Khối Bé (3 - 4 Tuổi)', badge: 'Bé B', color: 'border-emerald-300 text-emerald-800 bg-emerald-50', icon: '👧' },
+            
+            { id: 'CHOI_A', name: 'Nhỡ A', group: 'Khối Nhỡ (4 - 5 Tuổi)', badge: 'Nhỡ A', color: 'border-blue-300 text-blue-800 bg-blue-50', icon: '👦' },
+            { id: 'CHOI_B', name: 'Nhỡ B', group: 'Khối Nhỡ (4 - 5 Tuổi)', badge: 'Nhỡ B', color: 'border-blue-300 text-blue-800 bg-blue-50', icon: '🙋' },
+            
+            { id: 'LA_A', name: 'Lớn A', group: 'Khối Lớn (5 - 6 Tuổi)', badge: 'Lớn A', color: 'border-purple-300 text-purple-800 bg-purple-50', icon: '🧑' },
+            { id: 'LA_B', name: 'Lớn B', group: 'Khối Lớn (5 - 6 Tuổi)', badge: 'Lớn B', color: 'border-purple-300 text-purple-800 bg-purple-50', icon: '🙆' },
+        ];
+
+        let CLASSES = JSON.parse(JSON.stringify(DEFAULT_CLASSES));
+        let currentClassId = 'MAM_A';
+        let focusAbsenceReasonForId = null;
+        let editingStudentId = null;
+        let activeTab = 'parentTab';
+        let studentList = [];
+        let mealTransfers = [];
+        let autoReminderTriggeredToday = false;
+        let isAdminAuthenticated = false;
+        let isChatAdminAuthenticated = false;
+
+        let weeklyChartInstance = null;
+        let monthlyChartInstance = null;
+
+        const MEAL_PRICE = 20000;
+        const API_BASE = '/api';  // Vercel: moi yeu cau goi /api?r=<ten-chuc-nang>
+        let chatAdminPasswordMemory = '';
+        let studentAdminPasswordMemory = '';
+        let messengerConfigured = {};
+        let classPasswordSet = {};
+
+        // Giờ Việt Nam (UTC+7) bất kể múi giờ của điện thoại - khớp với máy chủ
+        function vnTime() {
+            const d = new Date(Date.now() + 7 * 3600000);
+            return { hours: d.getUTCHours(), minutes: d.getUTCMinutes(), seconds: d.getUTCSeconds(), day: d.getUTCDay(),
+                     date: d.getUTCDate(), month: d.getUTCMonth() + 1, year: d.getUTCFullYear() };
+        }
+        function vnDateISO() { return new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10); }
+        const VN_TZ = { timeZone: 'Asia/Ho_Chi_Minh' };
+
+        // Giai thich bang tieng Viet khi may chu tra ve trang loi (khong phai JSON cua ung dung)
+        function explainHttp(status, hadJsonError) {
+            if (status === 401 && !hadJsonError) return 'Vercel đang chặn truy cập vào máy chủ (lỗi 401 - Deployment Protection / yêu cầu đăng nhập Vercel). Vào Vercel → Settings → Deployment Protection để tắt cho Production.';
+            if (status === 404 || status === 405) return `Không tìm thấy máy chủ /api (lỗi ${status}). Thường do file api/index.js chưa nằm đúng thư mục "api" trên GitHub, hoặc Vercel chưa triển khai xong. Bấm "Kiểm tra kết nối máy chủ" để xem chi tiết.`;
+            if (status === 504) return 'Máy chủ phản hồi quá chậm (lỗi 504). Thử lại sau ít phút.';
+            if (status >= 500) return `Máy chủ bị sự cố khi chạy (lỗi ${status}). Thường do file api/index.js trên GitHub chưa phải bản mới nhất. Vào Vercel → Logs để xem chi tiết.`;
+            return `Máy chủ trả lỗi ${status}.`;
+        }
+
+        async function apiGet(resource) {
+            const res = await fetch(`${API_BASE}?r=data&resource=${encodeURIComponent(resource)}`, { cache: 'no-store' });
+            let data = null;
+            try { data = await res.json(); } catch (e) { /* khong phai JSON */ }
+            if (!res.ok) { const err = new Error((data && data.error) || explainHttp(res.status, false)); err.status = res.status; throw err; }
+            if (data === null || data === undefined) throw new Error('Máy chủ trả dữ liệu không hợp lệ (có thể file api/index.js chưa đúng bản mới)');
+            return data;
+        }
+
+        async function apiPost(path, body) {
+            const res = await fetch(`${API_BASE}?r=${encodeURIComponent(path)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const err = new Error((data && data.error) || explainHttp(res.status, false));
+                err.status = res.status;
+                err.fromApp = !!(data && data.error); // loi do chinh ung dung tra ve (khac loi cua Vercel)
+                throw err;
+            }
+            return data;
+        }
+
+        function maskPhoneNumbers(text) {
+            if (!text) return text;
+            return String(text).replace(/\d{8,12}/g, (match) => {
+                if (match.length <= 7) return match;
+                const first = match.slice(0, 3);
+                const last = match.slice(-4);
+                return `${first}${'*'.repeat(match.length - 7)}${last}`;
+            });
+        }
+
+        function setBanner(id, msg) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (!msg) { el.classList.add('hidden'); el.innerText = ''; return; }
+            el.innerText = msg;
+            el.classList.remove('hidden');
+        }
+
+        function reportBootError(where, e) {
+            console.error('Lỗi hiển thị [' + where + ']:', e);
+            setBanner('bootErrorBanner', `⚠️ Lỗi hiển thị (${where}): ${e && e.message ? e.message : e}`);
+        }
+
+        async function loadStudentsFromServer() {
+            try {
+                const data = await apiGet('students');
+                if (!Array.isArray(data)) throw new Error('Dữ liệu học sinh không hợp lệ');
+                studentList = data.filter(s => s && typeof s === 'object' && s.classId);
+                setBanner('serverBanner', '');
+            } catch (e) {
+                console.warn('Không tải được dữ liệu học sinh từ máy chủ:', e);
+                setBanner('serverBanner', `⚠️ Chưa kết nối được máy chủ dữ liệu: ${e.message}. Danh sách lớp vẫn hiển thị nhưng chưa có dữ liệu học sinh mới.`);
+            }
+        }
+
+        async function initFirebaseAndApp() {
+            const safe = (fn, name) => { try { fn(); } catch (e) { reportBootError(name, e); } };
+            // 1) Ve giao dien NGAY (khong cho mang) - moi buoc doc lap de 1 loi khong chan ca trang
+            safe(initClock, 'đồng hồ');
+            safe(populateClassSelects, 'chọn lớp');
+            safe(renderQuickSendGrid, 'gửi nhanh');
+            safe(renderBackupStatus, 'sao lưu');
+            safe(renderAll, 'giao diện');
+            // 2) Sau do moi tai du lieu tu may chu roi ve lai
+            await loadStudentsFromServer();
+            await loadMessengerStatus();
+            safe(renderQuickSendGrid, 'gửi nhanh');
+            safe(renderAll, 'giao diện');
+
+            // Tự làm mới dữ liệu định kì để các thiết bị khác cùng thấy cập nhật (đồng bộ đa thiết bị)
+            // 60 giây/lần và chỉ khi đang xem trang (tiết kiệm lượt truy cập gói miễn phí)
+            setInterval(async () => {
+                if (document.visibilityState !== 'visible') return;
+                if (editingStudentId) return; // Đang sửa dở thì tạm hoãn để không mất dữ liệu đang gõ
+                await loadStudentsFromServer();
+                renderAll();
+            }, 60000);
+        }
+
+        async function loadMessengerStatus() {
+            try {
+                messengerConfigured = await apiGet('messenger-status');
+                try { classPasswordSet = await apiGet('class-password-status'); } catch (e) { /* may chu ban cu: bo qua */ }
+            } catch (e) {
+                console.warn('Không tải được trạng thái link nhóm:', e);
+            }
+        }
+
+        window.renderChatConfigGrid = function() {
+            const container = document.getElementById('classMessengerUrlConfigGrid');
+            if (!container) return;
+
+            container.innerHTML = CLASSES.map(cls => `
+                <div class="bg-white p-3.5 rounded-xl border border-emerald-300 shadow-sm space-y-1.5">
+                    <label class="block text-xs font-extrabold text-emerald-900 uppercase flex items-center gap-1.5">
+                        <span>${cls.icon}</span> Lớp ${cls.name} (${cls.group})
+                        ${messengerConfigured[cls.id] ? '<span class="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-emerald-600 text-white normal-case font-bold">Đã cấu hình ✓</span>' : '<span class="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-500 normal-case font-bold">Chưa có link</span>'}
+                    </label>
+                    <input type="password" id="messengerUrlInput_${cls.id}" value="" placeholder="Dán link nhóm mới để cập nhật (link cũ luôn ẩn, không thể xem lại)..." autocomplete="off"
+                        class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500">
+                    <div class="flex items-center gap-2">
+                        <input type="password" id="messengerPwInput_${cls.id}" value="" placeholder="Mật khẩu riêng của lớp (tuỳ chọn, 4-40 ký tự; gõ dấu - để xoá)" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false"
+                            class="flex-1 p-2.5 bg-amber-50 border border-amber-300 rounded-xl text-xs text-slate-800 outline-none focus:ring-2 focus:ring-amber-500">
+                        ${classPasswordSet[cls.id] ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500 text-white font-bold whitespace-nowrap">Có mật khẩu riêng ✓</span>' : ''}
+                    </div>
+                    <div class="text-[10px] text-slate-400 flex items-center gap-1"><i class="fa-solid fa-lock"></i> Link và mật khẩu luôn ẩn. Mỗi lần Gửi nhanh phải nhập mật khẩu: mật khẩu riêng của lớp (chỉ mở được nhóm lớp này) hoặc mật khẩu admin (mở được mọi lớp).</div>
+                </div>
+            `).join('');
+        }
+
+        window.saveAllMessengerUrls = async function() {
+            let savedCount = 0;
+            for (const cls of CLASSES) {
+                const urlEl = document.getElementById(`messengerUrlInput_${cls.id}`);
+                const pwEl = document.getElementById(`messengerPwInput_${cls.id}`);
+                const val = urlEl ? urlEl.value.trim() : '';
+                const pw = pwEl ? pwEl.value.trim() : '';
+                if (!val && !pw) continue;
+                const body = { password: chatAdminPasswordMemory, classId: cls.id };
+                if (val) body.url = val;          // chi gui khi co nhap link moi (khong xoa link cu)
+                if (pw) body.classPassword = pw;  // chi gui khi co nhap mat khau rieng (gui "-" de xoa)
+                try {
+                    await apiPost('admin-messenger', body);
+                    savedCount++;
+                } catch (e) {
+                    showToast(`❌ Lỗi lưu lớp ${cls.name}: ${e.message}`, 'error');
+                    return;
+                }
+            }
+            await loadMessengerStatus();
+            renderChatConfigGrid();
+            renderQuickSendGrid();
+            showToast(savedCount > 0 ? `Đã lưu thiết lập cho ${savedCount} lớp!` : 'Chưa nhập link hoặc mật khẩu mới nào để lưu.');
+        }
+
+        window.initClock = function() {
+            function updateClock() {
+                const vn = vnTime();
+                const hours = vn.hours;
+                const minutes = vn.minutes;
+                const seconds = vn.seconds;
+                const dayOfWeek = vn.day;
+
+                const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                const clockEl = document.getElementById('realtimeClock');
+                if (clockEl) clockEl.innerText = timeStr;
+
+                const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+                const dayName = days[dayOfWeek];
+                const date = String(vn.date).padStart(2, '0');
+                const month = String(vn.month).padStart(2, '0');
+                const year = vn.year;
+
+                const dateEl = document.getElementById('realtimeDate');
+                if (dateEl) dateEl.innerText = `${dayName}, ngày ${date}/${month}/${year}`;
+
+                const badgeEl = document.getElementById('cutoffStatusBadge');
+                const kitchenNotice = document.getElementById('kitchenLockStatusNotice');
+
+                const isStandardWindow = (hours >= 18 || hours < 6);
+
+                if (badgeEl) {
+                    if (isStandardWindow) {
+                        badgeEl.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-500 text-white shadow";
+                        badgeEl.innerText = "Cổng đăng ký ăn mở (18:00 - 06:00)";
+                        if (kitchenNotice) {
+                            kitchenNotice.innerHTML = `<i class="fa-solid fa-circle-check"></i> Đang trong khung giờ nhận báo cơm chuẩn (18:00 chiều - 06:00 sáng). Chưa chốt sổ bếp.`;
+                        }
+                    } else {
+                        badgeEl.className = "px-3 py-1 rounded-full text-xs font-bold bg-rose-500 text-white shadow animate-pulse";
+                        badgeEl.innerText = "Đã qua 06:00 Sáng - Đã Khóa Toàn Bộ Lựa Chọn";
+                        if (kitchenNotice) {
+                            kitchenNotice.innerHTML = `<i class="fa-solid fa-lock text-rose-600"></i> Đã qua 06:00 sáng: Đã chốt danh sách nhà bếp. Toàn bộ lựa chọn đã bị khóa, bé chưa phản hồi tự động chuyển "Báo muộn" (trừ 20.000đ).`;
+                        }
+                    }
+                }
+
+
+                const countdownEl = document.getElementById('countdownTimer');
+                const countdownLabelEl = document.getElementById('countdownLabel');
+                if (countdownEl && countdownLabelEl) {
+                    const secOfDay = hours * 3600 + minutes * 60 + seconds;
+                    let label, diffSec;
+                    if (isStandardWindow) {
+                        label = 'Còn lại đến khi KHÓA (06:00)';
+                        diffSec = (hours >= 18 ? 86400 : 0) + 6 * 3600 - secOfDay;
+                    } else {
+                        label = 'Còn lại đến khi MỞ LẠI (18:00)';
+                        diffSec = 18 * 3600 - secOfDay;
+                    }
+                    diffSec = Math.max(0, diffSec);
+                    const hh = String(Math.floor(diffSec / 3600)).padStart(2, '0');
+                    const mm = String(Math.floor((diffSec % 3600) / 60)).padStart(2, '0');
+                    const ss = String(diffSec % 60).padStart(2, '0');
+                    countdownEl.innerText = `${hh}:${mm}:${ss}`;
+                    const isUrgent = diffSec <= 300;
+                    countdownEl.className = `mt-1.5 text-center font-mono font-black text-base sm:text-lg tracking-wider countdown-glow ${isUrgent ? 'countdown-urgent' : ''} ${isStandardWindow ? 'text-amber-300' : 'text-rose-300'}`;
+                    countdownLabelEl.innerText = label;
+                }
+
+                if ((hours === 6 && minutes === 0 && seconds === 0) || (hours === 18 && minutes === 0 && seconds === 0)) {
+                    renderAll();
+                }
+
+                if (hours === 17 && minutes === 30 && seconds === 0 && !autoReminderTriggeredToday) {
+                    autoReminderTriggeredToday = true;
+                    if (dayOfWeek !== 5 && dayOfWeek !== 6) {
+                        showToast('⏰ 17:30 - Máy chủ đã tự động mở chu kì mới! Vào Bước 4 bấm "Gửi Tin Nhắn Nhắc Nhở" để gửi vào Messenger/Zalo.', 'error');
+                    } else {
+                        console.log("Chiều Thứ 6 / Thứ 7 - Tự động bỏ qua nhắc nhở.");
+                        showToast("📌 Chiều Thứ 6 & Thứ 7: Bỏ qua nhắc nhở tự động nghỉ cuối tuần.");
+                    }
+                }
+            }
+            updateClock();
+            setInterval(updateClock, 1000);
+        }
+
+        window.trigger1730Simulation = async function() {
+            const dayOfWeek = vnTime().day;
+            if (dayOfWeek === 5 || dayOfWeek === 6) {
+                showToast('Hệ thống không tự động gửi nhắc chiều Thứ 6 & Thứ 7!', 'error');
+                return;
+            }
+            const { opened, prefilled } = await sendReminderToAllGroups();
+            if (opened > 0) {
+                if (prefilled === opened) {
+                    showToast(`✅ Đã mở ${opened} nhóm Messenger với nội dung điền sẵn - chỉ cần bấm Gửi trong từng khung chat!`);
+                } else if (prefilled > 0) {
+                    showToast(`📋 Đã mở ${opened} nhóm (${prefilled} Messenger điền sẵn - chỉ cần bấm Gửi; số còn lại là Zalo/khác đã copy sẵn nội dung, dán và bấm Gửi).`);
+                } else {
+                    showToast(`📋 Đã copy nội dung nhắc nhở & mở ${opened} nhóm chat trong tab mới - Dán (Ctrl+V) và bấm Gửi trong từng nhóm!`);
+                }
+            } else {
+                showToast('⚠️ Chưa cấu hình link nhóm Messenger/Zalo nào ở trên! Hãy dán link rồi bấm "Lưu Tất Cả Đường Dẫn Nhóm" trước.', 'error');
+            }
+        }
+
+        window.exportFullBackupJSON = async function() {
+            try {
+                const students = await apiPost('admin-students', { password: studentAdminPasswordMemory, action: 'exportAll' });
+                const backupData = { studentList: students, exportedAt: new Date().toISOString() };
+                const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json;charset=utf-8' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `SaoLuu_MyHoa_${vnDateISO()}.json`;
+                link.click();
+                localStorage.setItem('myhoa_last_backup_date', vnDateISO());
+                renderBackupStatus();
+                showToast('✅ Đã tải file sao lưu thành công!');
+            } catch (e) {
+                showToast(`❌ Lỗi tải sao lưu: ${e.message}`, 'error');
+            }
+        }
+
+        window.importFullBackupJSON = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!Array.isArray(data.studentList)) throw new Error('Sai định dạng');
+                    if (!confirm(`File sao lưu có ${data.studentList.length} học sinh (xuất lúc ${data.exportedAt || 'không rõ'}). Khôi phục sẽ GHI ĐÈ toàn bộ dữ liệu hiện tại trên MÁY CHỦ (mọi thiết bị). Tiếp tục?`)) {
+                        event.target.value = '';
+                        return;
+                    }
+                    await apiPost('admin-students', { password: studentAdminPasswordMemory, action: 'replaceAll', payload: data.studentList });
+                    await loadStudentsFromServer();
+                    renderAll();
+                    showToast('✅ Đã khôi phục dữ liệu từ file sao lưu!');
+                } catch (err) {
+                    showToast(`❌ ${err.message || 'File không hợp lệ hoặc bị lỗi!'}`, 'error');
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function renderBackupStatus() {
+            const infoEl = document.getElementById('lastBackupInfo');
+            const bannerEl = document.getElementById('backupReminderBanner');
+            const textEl = document.getElementById('backupReminderText');
+            const lastBackup = localStorage.getItem('myhoa_last_backup_date');
+            if (infoEl) {
+                infoEl.innerText = lastBackup ? `Lần sao lưu gần nhất: ${lastBackup}` : 'Chưa từng sao lưu!';
+            }
+            if (bannerEl && textEl) {
+                const daysSince = lastBackup ? Math.floor((new Date() - new Date(lastBackup)) / 86400000) : 999;
+                if (daysSince >= 7) {
+                    textEl.innerText = lastBackup ? `Đã ${daysSince} ngày chưa sao lưu dữ liệu! Hãy tải file sao lưu để tránh mất dữ liệu.` : 'Bạn chưa từng sao lưu dữ liệu! Hãy tải file sao lưu ngay để phòng mất dữ liệu.';
+                    bannerEl.classList.remove('hidden');
+                } else {
+                    bannerEl.classList.add('hidden');
+                }
+            }
+        }
+
+        let quickSendClassId = null;
+
+        // Gui nhanh: da mo khoa quan tri Buoc 4 thi dung luon phien do; chua thi HOI MAT KHAU cho tung lan gui
+        window.quickSendToClass = async function(classId) {
+            if (chatAdminPasswordMemory) return doQuickSend(classId, chatAdminPasswordMemory, false);
+            const cls = CLASSES.find(c => c.id === classId);
+            if (messengerConfigured[classId] === false) {
+                await loadMessengerStatus();
+                if (messengerConfigured[classId] === false) {
+                    showToast(`⚠️ Lớp ${cls ? cls.name : ''} chưa có link nhóm. Vào Bước 4 (đăng nhập) để thêm link.`, 'error');
+                    return;
+                }
+            }
+            quickSendClassId = classId;
+            document.getElementById('quickSendModalClass').innerText = cls ? cls.name : '';
+            const input = document.getElementById('quickSendPasswordInput');
+            input.value = '';
+            setLoginMsg('quickSendModalMsg', '');
+            document.getElementById('quickSendModal').classList.remove('hidden');
+            setTimeout(() => input.focus(), 50);
+        }
+
+        window.closeQuickSendModal = function() {
+            document.getElementById('quickSendModal').classList.add('hidden');
+            document.getElementById('quickSendPasswordInput').value = '';
+            quickSendClassId = null;
+        }
+
+        window.confirmQuickSend = function() {
+            const pw = document.getElementById('quickSendPasswordInput').value;
+            if (!pw) { setLoginMsg('quickSendModalMsg', 'Vui lòng nhập mật khẩu.'); return; }
+            if (!quickSendClassId) return;
+            return doQuickSend(quickSendClassId, pw, true);
+        }
+
+        async function doQuickSend(classId, password, fromModal) {
+            const cls = CLASSES.find(c => c.id === classId);
+            const messageText = document.querySelector('#chatGroupTab textarea')?.value || '';
+            // Mo san 1 tab trong NGAY khi bam - giu duoc "user gesture" de trinh duyet khong chan popup,
+            // sau khi may chu xac nhan mat khau se dieu huong tab nay toi link that.
+            const win = window.open('', '_blank');
+            if (!win) {
+                const msg = '⚠️ Trình duyệt đang chặn cửa sổ bật lên (pop-up)! Vui lòng vào cài đặt trình duyệt cho phép pop-up với trang này rồi thử lại.';
+                if (fromModal) setLoginMsg('quickSendModalMsg', msg); else showToast(msg, 'error');
+                return;
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(messageText).catch(() => {});
+            }
+            try {
+                const { url, prefilled } = await apiPost('send-reminder', { classId, messageText, password });
+                win.location.href = url;
+                if (fromModal) closeQuickSendModal();
+                showToast(prefilled
+                    ? `✅ Đã mở nhóm ${cls ? cls.name : ''} với nội dung điền sẵn - chỉ cần bấm Gửi!`
+                    : `📋 Đã copy nội dung & mở nhóm ${cls ? cls.name : ''} - dán (Ctrl+V) và bấm Gửi!`);
+            } catch (e) {
+                win.close();
+                const text = (e && e.status === 401 && e.fromApp) ? 'Mật khẩu không đúng. Hãy thử lại (không phân biệt chữ hoa/thường).' : loginErrorText(e);
+                if (fromModal) setLoginMsg('quickSendModalMsg', text); else showToast(`⚠️ ${text}`, 'error');
+            }
+        }
+
+        window.renderQuickSendGrid = function() {
+            const grid = document.getElementById('quickSendGrid');
+            if (!grid) return;
+            grid.innerHTML = CLASSES.map(cls => `
+                <button onclick="quickSendToClass('${cls.id}')" class="p-2.5 rounded-xl border ${cls.color} text-xs font-bold flex flex-col items-center gap-1 hover:shadow-md hover:scale-[1.02] transition">
+                    <span class="text-lg">${cls.icon}</span>
+                    <span class="truncate w-full text-center">${cls.name}</span>
+                </button>
+            `).join('');
+        }
+
+        async function sendReminderToAllGroups() {
+            if (!chatAdminPasswordMemory) { showToast('🔒 Hãy đăng nhập quản trị Bước 4 trước khi gửi.', 'error'); return { opened: 0, prefilled: 0 }; }
+            const messageText = document.querySelector('#chatGroupTab textarea')?.value || '';
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(messageText).catch(() => {});
+            }
+            let opened = 0;
+            let prefilled = 0;
+            for (const cls of CLASSES) {
+                if (!messengerConfigured[cls.id]) continue;
+                const win = window.open('', '_blank');
+                try {
+                    const result = await apiPost('send-reminder', { classId: cls.id, messageText, password: chatAdminPasswordMemory });
+                    if (win) win.location.href = result.url;
+                    if (result.prefilled) prefilled++;
+                    opened++;
+                } catch (e) {
+                    if (win) win.close();
+                }
+            }
+            return { opened, prefilled };
+        }
+
+        window.renderAll = function() {
+            [renderClassTabs, updateActiveClassDisplay, renderCurrentTabContent].forEach(fn => {
+                try { fn(); } catch (e) { reportBootError(fn.name || 'renderAll', e); }
+            });
+        }
+
+        window.renderClassTabs = function() {
+            const container = document.getElementById('classTabsContainer');
+            if (!container) return;
+
+            const groups = [
+                { title: '👶 KHỐI NHÀ TRẺ (18 - 36 THÁNG)', ids: ['NT_A', 'NT_B'], bg: 'bg-pink-50/70 border-pink-200' },
+                { title: '🌱 KHỐI TRẺ NHỎ (3 - 4 TUỔI)', ids: ['MAM_A', 'MAM_B'], bg: 'bg-emerald-50/70 border-emerald-200' },
+                { title: '🌻 KHỐI TRẺ NHỠ (4 - 5 TUỔI)', ids: ['CHOI_A', 'CHOI_B'], bg: 'bg-blue-50/70 border-blue-200' },
+                { title: '🌳 KHỐI TRẺ LỚN (5 - 6 TUỔI)', ids: ['LA_A', 'LA_B'], bg: 'bg-purple-50/70 border-purple-200' }
+            ];
+
+            container.innerHTML = groups.map(grp => {
+                const buttonsHtml = grp.ids.map(classId => {
+                    const cls = CLASSES.find(c => c.id === classId);
+                    if (!cls) return '';
+                    const isActive = cls.id === currentClassId;
+                    const count = studentList.filter(s => s.classId === cls.id).length;
+
+                    return `
+                        <button onclick="selectClass('${cls.id}')" 
+                            class="p-2 rounded-lg border text-left transition-all transform hover:scale-[1.01] flex items-center justify-between gap-1 ${
+                                isActive 
+                                ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white border-blue-800 shadow-md ring-2 ring-blue-400 font-extrabold' 
+                                : `${cls.color} hover:shadow-sm hover:border-blue-400`
+                            }">
+                            <div class="flex items-center gap-1.5 min-w-0">
+                                <span class="text-base shrink-0">${cls.icon}</span>
+                                <div class="min-w-0">
+                                    <div class="text-[8px] font-extrabold uppercase tracking-wide truncate ${isActive ? 'text-blue-100' : 'text-slate-500'}">${cls.badge}</div>
+                                    <div class="text-xs font-black truncate">${cls.name}</div>
+                                </div>
+                            </div>
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-black shrink-0 ${isActive ? 'bg-white/20 text-white' : 'bg-white text-slate-800 border border-slate-200 shadow-2xs'}">
+                                ${count}
+                            </span>
+                        </button>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="p-2 rounded-xl border ${grp.bg}">
+                        <div class="text-[10px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-2">
+                            <span>${grp.title}</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-1.5">
+                            ${buttonsHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.updateActiveClassDisplay = function() {
+            const currentClass = CLASSES.find(c => c.id === currentClassId);
+            if (currentClass) {
+                const textEl = document.getElementById('activeClassNameText');
+                if (textEl) textEl.innerText = `Đang chọn: Lớp ${currentClass.name} (${currentClass.group})`;
+            }
+        }
+
+        window.selectClass = function(classId) {
+            currentClassId = classId;
+            renderClassTabs();
+            updateActiveClassDisplay();
+            renderCurrentTabContent();
+            const cls = CLASSES.find(c => c.id === classId);
+            showToast(`Đã chọn Lớp ${cls.name}`);
+        }
+
+        window.switchTab = function(tabId) {
+            activeTab = tabId;
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn p-3 rounded-xl font-extrabold text-xs sm:text-sm flex flex-col items-center justify-center text-center transition-all bg-white text-slate-700 hover:bg-slate-50 border border-slate-200";
+                const subText = btn.querySelector('div');
+                if (subText) subText.className = "flex items-center gap-1.5 text-[11px] text-slate-400 uppercase font-bold tracking-wider";
+            });
+
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+
+            const activeBtn = document.getElementById(`tabNav-${tabId}`);
+            if (activeBtn) {
+                activeBtn.className = "tab-btn p-3 rounded-xl font-extrabold text-xs sm:text-sm flex flex-col items-center justify-center text-center transition-all shadow-md bg-blue-600 text-white ring-2 ring-blue-400 tab-btn-active";
+                const subText = activeBtn.querySelector('div');
+                if (subText) subText.className = "flex items-center gap-1.5 text-[11px] text-blue-100 uppercase font-bold tracking-wider";
+            }
+
+            document.getElementById(tabId).classList.remove('hidden');
+            renderCurrentTabContent();
+        }
+
+        window.renderCurrentTabContent = function() {
+            if (activeTab === 'parentTab') renderParentTab();
+            if (activeTab === 'teacherTab') renderTeacherTab();
+            if (activeTab === 'rebalanceTab') {
+                renderRebalanceTab();
+                renderAnalyticsCharts();
+            }
+            if (activeTab === 'chatGroupTab') renderChatGroupTab();
+            if (activeTab === 'studentMgmtTab') renderStudentMgmtTab();
+        }
+
+        window.renderParentTab = function() {
+            const currentClass = CLASSES.find(c => c.id === currentClassId);
+            document.getElementById('currentParentClassName').innerText = `LỚP ${currentClass.name.toUpperCase()} (${currentClass.group.toUpperCase()})`;
+            
+            const classStudents = studentList.filter(s => s.classId === currentClassId);
+            document.getElementById('parentClassCount').innerText = classStudents.length;
+
+            const tbody = document.getElementById('parentStudentTable');
+            if (classStudents.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-medium">Chưa có học sinh trong lớp. Vui lòng sang Bước 5 (Nhập Excel & Admin) để nhập danh sách.</td></tr>`;
+                return;
+            }
+
+            const currentHour = vnTime().hours;
+            const isAfterCutoff = !(currentHour >= 18 || currentHour < 6);
+
+            tbody.innerHTML = classStudents.map((st, idx) => {
+                const isEating = st.mealStatus === 'EATING';
+                const isAbsent = st.mealStatus === 'ABSENT';
+                const isPending = !isEating && !isAbsent;
+                const deduction = st.deductionAmount || 0;
+                return `
+                    <tr class="hover:bg-slate-50 transition ${isPending ? 'bg-amber-50/60' : ''}">
+                        <td class="p-3.5 text-center font-bold text-slate-500">${idx + 1}</td>
+                        <td class="p-3.5 font-bold text-slate-900">
+                            ${st.name}
+                            <div class="text-xs text-slate-500 font-normal">${maskPhoneNumbers(st.parentInfo) || 'Chưa có thông tin'}</div>
+                        </td>
+                        <td class="p-3.5 text-center">
+                            <span class="px-3 py-1 rounded-full text-xs font-black ${
+                                isPending
+                                ? 'bg-amber-100 text-amber-800 border border-amber-300 animate-pulse'
+                                : isEating
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : 'bg-rose-100 text-rose-800 border border-rose-300'
+                            }">
+                                ${isPending ? '⏳ CHƯA CHỌN' : isEating ? '✅ ĐĂNG KÝ ĂN' : '❌ BÁO NGHỈ HỌC'}
+                            </span>
+                        </td>
+                        <td class="p-3.5 text-center text-xs font-mono font-bold text-slate-600">${isPending ? '---' : (st.reportTime || 'Mặc định')}</td>
+                        <td class="p-3.5 text-xs">
+                            ${isPending
+                                ? `<span class="text-amber-700 font-bold">⚠️ Vui lòng bấm chọn 1 trong 2 nút bên phải. Chưa chọn sẽ tự động bị tính Báo muộn sau 06:00 sáng!</span>`
+                                : deduction > 0
+                                ? `<span class="text-rose-600 font-extrabold flex items-center gap-1 mb-1">
+                                       <i class="fa-solid fa-triangle-exclamation"></i> Trừ tiền (Báo muộn - Không hoàn lại): <strong>-${deduction.toLocaleString('vi-VN')} đ</strong>
+                                   </span>`
+                                : `<span class="text-emerald-700 font-semibold">0 đ (Báo trong khung giờ 18:00 - 06:00: Không trừ tiền)</span>`
+                            }
+                            ${isAbsent && !st.fineCharged ? `
+                                <div class="mt-1 flex items-center gap-1.5">
+                                    <input type="text" id="absenceReasonInput_${st.id}" value="${st.absenceReason || ''}" placeholder="Nhập lý do báo nghỉ..." 
+                                        onchange="updateAbsenceReason('${st.id}', this.value)"
+                                        class="w-full p-1.5 text-xs bg-rose-50 border border-rose-200 rounded-lg outline-none focus:ring-2 focus:ring-rose-400 text-rose-900 font-medium">
+                                </div>
+                            ` : isEating ? `<span class="text-slate-500 italic text-[11px]">${st.note || 'Đăng ký ăn bình thường'}</span>` : ''}
+                        </td>
+                        <td class="p-3.5 text-right">
+                            <div class="inline-flex rounded-xl shadow-xs border border-slate-200" role="group">
+                                <button onclick="toggleParentMeal('${st.id}', 'EATING')" 
+                                    ${isAfterCutoff ? 'disabled title="Đã qua 06:00 sáng: Chức năng đã bị khóa hoàn toàn, không thể thay đổi lựa chọn!"' : ''}
+                                    class="px-3.5 py-1.5 text-xs font-bold rounded-l-xl transition ${
+                                        isAfterCutoff 
+                                        ? (isEating ? 'bg-emerald-600/60 text-white cursor-not-allowed opacity-80' : 'bg-slate-200 text-slate-400 cursor-not-allowed')
+                                        : (isEating ? 'bg-emerald-600 text-white' : isPending ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100' : 'bg-slate-100 text-slate-700 hover:bg-slate-200')
+                                    }">
+                                    ${isAfterCutoff ? '🔒 Đăng Ký Ăn' : 'Đăng Ký Ăn'}
+                                </button>
+                                <button onclick="toggleParentMeal('${st.id}', 'ABSENT')" 
+                                    ${isAfterCutoff ? 'disabled title="Đã qua 06:00 sáng: Chức năng đã bị khóa hoàn toàn, không thể thay đổi lựa chọn!"' : ''}
+                                    class="px-3.5 py-1.5 text-xs font-bold rounded-r-xl transition ${
+                                        isAfterCutoff 
+                                        ? (isAbsent ? 'bg-rose-600/60 text-white cursor-not-allowed opacity-80' : 'bg-slate-200 text-slate-400 cursor-not-allowed')
+                                        : (isAbsent ? 'bg-rose-600 text-white' : isPending ? 'bg-rose-50 text-rose-700 border border-rose-300 hover:bg-rose-100' : 'bg-slate-100 text-slate-700 hover:bg-slate-200')
+                                    }">
+                                    ${isAfterCutoff ? '🔒 Báo Nghỉ' : 'Báo Nghỉ Học'}
+                                </button>
+                            </div>
+                            ${isAfterCutoff ? '<div class="text-[10px] text-rose-600 font-bold mt-1 text-right">🔒 Đã khóa toàn bộ lựa chọn (Sau 06:00 sáng - Tự động Báo muộn nếu chưa chọn)</div>' : ''}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            if (focusAbsenceReasonForId) {
+                const reasonInput = document.getElementById(`absenceReasonInput_${focusAbsenceReasonForId}`);
+                if (reasonInput) reasonInput.focus();
+                focusAbsenceReasonForId = null;
+            }
+        }
+
+        window.toggleParentMeal = async function(studentId, newStatus) {
+            const student = studentList.find(s => String(s.id) === String(studentId));
+            if (!student) return;
+
+            try {
+                const updated = await apiPost('toggle-meal', { studentId, newStatus });
+                Object.assign(student, updated);
+                renderAll();
+                if (newStatus === 'ABSENT') {
+                    openAbsenceReasonModal(student.id, student.name);
+                } else {
+                    showToast(`Đăng ký suất cơm thành công cho bé ${student.name}!`);
+                }
+            } catch (e) {
+                showToast(`🔒 ${e.message}`, 'error');
+                renderAll();
+            }
+        }
+
+        let absenceReasonModalStudentId = null;
+
+        window.openAbsenceReasonModal = function(studentId, studentName) {
+            absenceReasonModalStudentId = studentId;
+            document.getElementById('absenceReasonModalName').innerText = studentName;
+            document.getElementById('absenceReasonModalInput').value = '';
+            document.getElementById('absenceReasonModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('absenceReasonModalInput').focus(), 50);
+        }
+
+        window.skipAbsenceReasonModal = function() {
+            document.getElementById('absenceReasonModal').classList.add('hidden');
+            showToast('Đã ghi nhận báo nghỉ (chưa có lý do). Bạn có thể bổ sung lý do sau trong bảng.');
+            absenceReasonModalStudentId = null;
+        }
+
+        window.submitAbsenceReasonModal = async function() {
+            const reason = document.getElementById('absenceReasonModalInput').value.trim();
+            const studentId = absenceReasonModalStudentId;
+            document.getElementById('absenceReasonModal').classList.add('hidden');
+            if (!studentId || !reason) return;
+            await updateAbsenceReason(studentId, reason);
+        }
+
+        window.updateAbsenceReason = async function(studentId, reason) {
+            const student = studentList.find(s => String(s.id) === String(studentId));
+            if (!student) return;
+            try {
+                const updated = await apiPost('update-reason', { studentId, reason });
+                Object.assign(student, updated);
+                showToast(`Đã cập nhật lý do cho bé ${student.name}!`);
+            } catch (e) {
+                showToast(`❌ ${e.message}`, 'error');
+            }
+        }
+
+        window.renderTeacherTab = function() {
+            const currentClass = CLASSES.find(c => c.id === currentClassId);
+            document.getElementById('teacherClassTitle').innerText = `DANH SÁCH ĐIỂM DANH & CHỐT BẾP - LỚP ${currentClass.name.toUpperCase()} (PHÂN HIỆU MỸ HÒA)`;
+
+            const classStudents = studentList.filter(s => s.classId === currentClassId);
+            
+            const total = classStudents.length;
+            const present = classStudents.filter(s => s.isPresent && s.mealStatus === 'EATING').length;
+            const absentEarly = classStudents.filter(s => !s.isPresent && !s.fineCharged).length;
+            const absentLate = classStudents.filter(s => s.fineCharged).length;
+            
+            const totalDeductionClass = classStudents.reduce((sum, s) => sum + (s.deductionAmount || 0), 0);
+
+            document.getElementById('statTotal').innerText = total;
+            document.getElementById('statPresent').innerText = present;
+            document.getElementById('statAbsentEarly').innerText = absentEarly;
+            document.getElementById('statAbsentLate').innerText = absentLate;
+            document.getElementById('statTotalDeduction').innerText = `${totalDeductionClass.toLocaleString('vi-VN')} đ`;
+
+            const tbody = document.getElementById('teacherStudentTable');
+            if (classStudents.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 font-medium">Lớp chưa có học sinh.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = classStudents.map((st, idx) => {
+                const deduction = st.deductionAmount || 0;
+                const isLate = st.absenceReason === 'Báo muộn';
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3.5 text-center font-bold text-slate-500">${idx + 1}</td>
+                        <td class="p-3.5 font-bold text-slate-900">${st.name}</td>
+                        <td class="p-3.5 text-center text-xs">
+                            ${st.mealStatus === 'EATING' ? '<span class="text-emerald-700 font-extrabold">✓ Đăng ký ăn</span>' : '<span class="text-slate-400">---</span>'}
+                        </td>
+                        <td class="p-3.5 text-center text-xs">
+                            ${st.mealStatus === 'ABSENT' ? `<span class="${isLate ? 'text-rose-700 font-black' : 'text-amber-700 font-bold'}">Nghỉ (${st.reportTime})</span><div class="text-[11px] ${isLate ? 'text-rose-600 font-extrabold' : 'text-slate-500'} mt-0.5">${st.absenceReason || 'Nghỉ'}</div>` : '<span class="text-slate-400">---</span>'}
+                        </td>
+                        <td class="p-3.5 text-center">
+                            <input type="checkbox" ${st.isPresent ? 'checked' : ''} onchange="toggleTeacherAttendance('${st.id}', this.checked)"
+                                class="w-5 h-5 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500 cursor-pointer">
+                        </td>
+                        <td class="p-3.5 text-center">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-extrabold ${deduction > 0 ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-slate-100 text-slate-500'}">
+                                ${deduction > 0 ? `-${deduction.toLocaleString('vi-VN')}đ` : '0đ'}
+                            </span>
+                        </td>
+                        <td class="p-3.5 text-xs text-slate-600">${st.note || 'Khớp suất bếp'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.toggleTeacherAttendance = async function(studentId, isChecked) {
+            const student = studentList.find(s => String(s.id) === String(studentId));
+            if (!student) return;
+            student.isPresent = isChecked;
+            try {
+                await apiPost('save-student', { id: student.id, isPresent: isChecked });
+                showToast(`Cập nhật điểm danh bé ${student.name}`);
+            } catch (e) {
+                showToast(`❌ Lỗi cập nhật: ${e.message}`, 'error');
+            }
+        }
+
+        window.exportTeacherReportTXT = function() {
+            const currentClass = CLASSES.find(c => c.id === currentClassId);
+            const classStudents = studentList.filter(s => s.classId === currentClassId);
+            
+            let txtContent = `========================================================\n`;
+            txtContent += `PHÂN HIỆU MỸ HÒA - TRƯỜNG MẦM NON BẮC GIANH\n`;
+            txtContent += `BÁO CÁO CHỐT BẾP & BÁO CƠM LỚP ${currentClass.name.toUpperCase()}\n`;
+            txtContent += `Thời gian chốt: ${new Date().toLocaleString('vi-VN', VN_TZ)}\n`;
+            txtContent += `========================================================\n\n`;
+            txtContent += `Tổng số học sinh sĩ số: ${classStudents.length}\n`;
+            txtContent += `Số suất ăn đăng ký: ${classStudents.filter(s => s.mealStatus === 'EATING').length}\n`;
+            txtContent += `Số báo nghỉ: ${classStudents.filter(s => s.mealStatus === 'ABSENT').length}\n\n`;
+            txtContent += `--------------------------------------------------------\n`;
+            txtContent += `STT | Họ và Tên Học Sinh        | Trạng Thái  | Giờ Báo  | Ghi Chú / Trừ Tiền\n`;
+            txtContent += `--------------------------------------------------------\n`;
+
+            classStudents.forEach((st, idx) => {
+                const stt = String(idx + 1).padStart(3, ' ');
+                const name = st.name.padEnd(25, ' ');
+                const status = (st.mealStatus === 'EATING' ? 'Đăng ký ăn' : 'Báo nghỉ').padEnd(11, ' ');
+                const time = (st.reportTime || '---').padEnd(8, ' ');
+                const note = st.absenceReason || st.note || 'Khớp suất chuẩn';
+                const penalty = st.deductionAmount > 0 ? ` (Trừ -${st.deductionAmount.toLocaleString('vi-VN')}đ)` : '';
+                txtContent += `${stt} | ${name} | ${status} | ${time} | ${note}${penalty}\n`;
+            });
+
+            txtContent += `--------------------------------------------------------\n\n`;
+            txtContent += `Xác nhận của nhà bếp:                   Giáo viên chủ nhiệm:\n\n\n\n`;
+            txtContent += `========================================================\n`;
+
+            const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `BaoCaoChotBep_MyHoa_${currentClass.id}_${vnDateISO()}.txt`;
+            link.click();
+            showToast('Đã xuất báo cáo chốt bếp dạng file .TXT thành công!');
+        }
+
+        window.exportTeacherReportPDF = function() {
+            const currentClass = CLASSES.find(c => c.id === currentClassId);
+            const classStudents = studentList.filter(s => s.classId === currentClassId);
+            
+            document.getElementById('pdfReportTitle').innerText = `BÁO CÁO CHỐT BẾP & SUẤT ĂN - LỚP ${currentClass.name.toUpperCase()}`;
+            document.getElementById('pdfReportTime').innerText = `Thời gian chốt: ${new Date().toLocaleString('vi-VN', VN_TZ)}`;
+            document.getElementById('pdfStatTotal').innerText = classStudents.length;
+            document.getElementById('pdfStatEating').innerText = classStudents.filter(s => s.mealStatus === 'EATING').length;
+            document.getElementById('pdfStatAbsent').innerText = classStudents.filter(s => s.mealStatus === 'ABSENT').length;
+
+            const pdfBody = document.getElementById('pdfTableBody');
+            pdfBody.innerHTML = classStudents.map((st, idx) => `
+                <tr>
+                    <td class="p-1.5 text-center border border-slate-300">${idx + 1}</td>
+                    <td class="p-1.5 font-bold border border-slate-300">${st.name}</td>
+                    <td class="p-1.5 text-center border border-slate-300">${st.mealStatus === 'EATING' ? 'Đăng ký ăn' : 'Báo nghỉ'}</td>
+                    <td class="p-1.5 text-center border border-slate-300">${st.reportTime || '---'}</td>
+                    <td class="p-1.5 border border-slate-300">${st.absenceReason || st.note || 'Khớp suất chuẩn'} ${st.deductionAmount > 0 ? `(-${st.deductionAmount.toLocaleString('vi-VN')}đ)` : ''}</td>
+                </tr>
+            `).join('');
+
+            const element = document.getElementById('pdfExportContainer');
+            element.classList.remove('hidden');
+
+            const opt = {
+                margin:       10,
+                filename:     `BaoCaoChotBep_MyHoa_${currentClass.id}_${vnDateISO()}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            if (typeof html2pdf !== 'undefined') {
+                html2pdf().from(element).set(opt).save().then(() => {
+                    element.classList.add('hidden');
+                    showToast('Đã xuất file báo bếp PDF thành công!');
+                }).catch(err => {
+                    console.error("PDF export error:", err);
+                    element.classList.add('hidden');
+                    showToast('Lỗi xuất file PDF!', 'error');
+                });
+            } else {
+                element.classList.add('hidden');
+                showToast('Thư viện PDF chưa sẵn sàng!', 'error');
+            }
+        }
+
+        window.renderRebalanceTab = function() {
+            const grid = document.getElementById('classMealOverviewGrid');
+            if (!grid) return;
+            grid.innerHTML = CLASSES.map(cls => {
+                const students = studentList.filter(s => s.classId === cls.id);
+                const eatingCount = students.filter(s => s.mealStatus === 'EATING').length;
+                const classDeduction = students.reduce((sum, s) => sum + (s.deductionAmount || 0), 0);
+                
+                return `
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">${cls.icon} Lớp ${cls.name}</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold">${cls.badge}</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-center text-xs pt-1">
+                            <div class="bg-emerald-50 p-2 rounded-xl border border-emerald-100">
+                                <div class="text-emerald-700 font-bold text-[11px]">Đăng Ký Ăn</div>
+                                <div class="text-lg font-black text-emerald-900 mt-0.5">${eatingCount}</div>
+                            </div>
+                            <div class="bg-rose-50 p-2 rounded-xl border border-rose-100">
+                                <div class="text-rose-700 font-bold text-[11px]">Tổng Trừ Không Hoàn Lại</div>
+                                <div class="text-sm font-black text-rose-900 mt-0.5">-${classDeduction.toLocaleString('vi-VN')}đ</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.renderAnalyticsCharts = async function() {
+            let history = [];
+            try { history = await apiGet('history'); } catch (e) { console.warn('Không tải được lịch sử:', e); }
+            if (!Array.isArray(history)) history = [];
+            renderMonthlyDeductionTable(history);
+            if (typeof Chart === 'undefined') return;
+            const last7 = history.slice(-7);
+
+            const ctxWeekly = document.getElementById('weeklyChart')?.getContext('2d');
+            if (ctxWeekly) {
+                if (weeklyChartInstance) weeklyChartInstance.destroy();
+
+                if (last7.length === 0) {
+                    ctxWeekly.canvas.parentElement.innerHTML = `<div class="h-full flex items-center justify-center text-center text-slate-400 text-xs font-medium p-4">📊 Chưa có đủ dữ liệu lịch sử.<br>Biểu đồ sẽ hiển thị sau khi hệ thống chạy qua vài chu kì báo cơm thực tế.</div>`;
+                } else {
+                weeklyChartInstance = new Chart(ctxWeekly, {
+                    type: 'bar',
+                    data: {
+                        labels: last7.map(h => h.date.slice(5)),
+                        datasets: [
+                            {
+                                label: 'Học sinh Báo Ăn',
+                                data: last7.map(h => h.totalEating),
+                                backgroundColor: '#10b981',
+                                borderRadius: 6
+                            },
+                            {
+                                label: 'Học sinh Báo Nghỉ',
+                                data: last7.map(h => h.totalAbsent),
+                                backgroundColor: '#f43f5e',
+                                borderRadius: 6
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: 1100,
+                            easing: 'easeOutElastic',
+                            delay: (ctx) => ctx.type === 'data' ? ctx.dataIndex * 80 : 0
+                        },
+                        plugins: {
+                            legend: { position: 'top', labels: { font: { family: 'Be Vietnam Pro', size: 11, weight: 'bold' } } }
+                        },
+                        scales: {
+                            x: { grid: { display: false } },
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+                }
+            }
+
+            const ctxMonthly = document.getElementById('monthlyChart')?.getContext('2d');
+            if (ctxMonthly) {
+                if (monthlyChartInstance) monthlyChartInstance.destroy();
+
+                const monthMap = {};
+                history.forEach(h => {
+                    const monthKey = h.date.slice(0, 7);
+                    if (!monthMap[monthKey]) monthMap[monthKey] = { eating: 0, absent: 0, days: 0, deduction: 0 };
+                    monthMap[monthKey].eating += h.totalEating;
+                    monthMap[monthKey].absent += h.totalAbsent;
+                    monthMap[monthKey].deduction += h.totalDeduction;
+                    monthMap[monthKey].days += 1;
+                });
+                const monthKeys = Object.keys(monthMap).sort();
+
+                if (monthKeys.length === 0) {
+                    ctxMonthly.canvas.parentElement.innerHTML = `<div class="h-full flex items-center justify-center text-center text-slate-400 text-xs font-medium p-4">📊 Chưa có đủ dữ liệu lịch sử theo tháng.<br>Biểu đồ sẽ hiển thị sau khi hệ thống chạy qua các chu kì thực tế.</div>`;
+                } else {
+                monthlyChartInstance = new Chart(ctxMonthly, {
+                    type: 'line',
+                    data: {
+                        labels: monthKeys.map(k => `Tháng ${parseInt(k.slice(5,7))}/${k.slice(0,4)}`),
+                        datasets: [
+                            {
+                                label: 'Số lượt Báo Ăn trung bình/ngày',
+                                data: monthKeys.map(k => Math.round(monthMap[k].eating / monthMap[k].days)),
+                                borderColor: '#2563eb',
+                                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                                fill: true,
+                                tension: 0.3,
+                                borderWidth: 3,
+                                pointRadius: 4,
+                                pointHoverRadius: 7,
+                                pointBackgroundColor: '#1d4ed8'
+                            },
+                            {
+                                label: 'Số lượt Báo Nghỉ trung bình/ngày',
+                                data: monthKeys.map(k => Math.round(monthMap[k].absent / monthMap[k].days)),
+                                borderColor: '#d97706',
+                                backgroundColor: 'transparent',
+                                fill: false,
+                                tension: 0.3,
+                                borderWidth: 2,
+                                pointRadius: 3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeOutQuart'
+                        },
+                        interaction: { intersect: false, mode: 'index' },
+                        plugins: {
+                            legend: { position: 'top', labels: { font: { family: 'Be Vietnam Pro', size: 11, weight: 'bold' } } }
+                        },
+                        scales: {
+                            x: { grid: { display: false } },
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+                }
+            }
+
+        }
+
+        window.renderMonthlyDeductionTable = function(history) {
+            const body = document.getElementById('monthlyDeductionBody');
+            if (!body) return;
+            const monthKey = vnDateISO().slice(0, 7);
+            const labelEl = document.getElementById('monthlyDeductionMonth');
+            if (labelEl) labelEl.innerText = `Tháng ${parseInt(monthKey.slice(5, 7), 10)}/${monthKey.slice(0, 4)}`;
+            let totalAmount = 0, totalCount = 0;
+            const rows = CLASSES.map(cls => {
+                let amount = 0;
+                (history || []).forEach(h => {
+                    if (String(h.date).startsWith(monthKey) && h.byClass && h.byClass[cls.id]) amount += Number(h.byClass[cls.id].deduction) || 0;
+                });
+                amount += studentList.filter(s => s.classId === cls.id).reduce((sum, s) => sum + (s.deductionAmount || 0), 0);
+                const count = Math.round(amount / MEAL_PRICE);
+                totalAmount += amount; totalCount += count;
+                return `<tr class="border-t border-amber-200"><td class="py-1.5 font-bold">${cls.icon} ${cls.name}</td><td class="py-1.5 text-center">${count}</td><td class="py-1.5 text-right font-extrabold ${amount > 0 ? 'text-rose-600' : 'text-slate-400'}">${amount.toLocaleString('vi-VN')} đ</td></tr>`;
+            }).join('');
+            body.innerHTML = rows + `<tr class="border-t-2 border-amber-400 bg-amber-100/60"><td class="py-2 font-black">TỔNG CỘNG</td><td class="py-2 text-center font-black">${totalCount}</td><td class="py-2 text-right font-black text-rose-700">${totalAmount.toLocaleString('vi-VN')} đ</td></tr>`;
+        }
+
+        window.executeMealTransfer = function() {
+            const fromClassId = document.getElementById('transferFromClass').value;
+            const toClassId = document.getElementById('transferToClass').value;
+            const qty = parseInt(document.getElementById('transferQuantity').value);
+            const reason = document.getElementById('transferReason').value;
+
+            if (fromClassId === toClassId) {
+                showToast('Lớp chuyển và lớp nhận không được giống nhau!', 'error');
+                return;
+            }
+
+            const fromClassName = CLASSES.find(c => c.id === fromClassId).name;
+            const toClassName = CLASSES.find(c => c.id === toClassId).name;
+
+            mealTransfers.push({
+                timestamp: new Date().toLocaleTimeString('vi-VN', VN_TZ),
+                from: fromClassName,
+                to: toClassName,
+                quantity: qty,
+                reason: reason
+            });
+
+            showToast(`Đã điều chuyển ${qty} suất ăn từ Lớp ${fromClassName} sang Lớp ${toClassName}!`);
+            renderRebalanceTab();
+            renderAnalyticsCharts();
+        }
+
+        window.togglePasswordVisibility = function(inputId) {
+            const el = document.getElementById(inputId);
+            if (el) el.type = el.type === 'password' ? 'text' : 'password';
+        }
+
+        // Hien dung nguyen nhan that (sai mat khau / chua dat mat khau tren may chu / bi khoa / mat ket noi)
+        function loginErrorText(e) {
+            if (e && e.status === 401 && e.fromApp) return 'Mật khẩu không đúng (không phân biệt chữ hoa/thường). Hãy bấm "Hiện / ẩn mật khẩu" để kiểm tra lại.';
+            if (e && e.status) return e.message;
+            return 'Không kết nối được máy chủ: ' + (e && e.message ? e.message : 'lỗi mạng') + '. Kiểm tra mạng rồi thử lại.';
+        }
+        function setLoginMsg(id, msg, good) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (!msg) { el.classList.add('hidden'); el.innerText = ''; return; }
+            el.innerText = msg;
+            el.className = 'p-2.5 rounded-xl border text-xs font-bold ' + (good
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                : 'bg-rose-50 border-rose-300 text-rose-700');
+        }
+
+        // Nut "Kiem tra ket noi may chu": cho biet may chu co chay khong, da noi Redis chua
+        window.runServerDiagnosis = async function(msgId) {
+            setLoginMsg(msgId, '⏳ Đang kiểm tra máy chủ...', true);
+            try {
+                const res = await fetch(`${API_BASE}?r=ping`, { cache: 'no-store' });
+                let data = null;
+                try { data = await res.json(); } catch (e) { /* khong phai JSON */ }
+                if (res.ok && data && data.ok) {
+                    if (data.redis) setLoginMsg(msgId, '✅ Máy chủ hoạt động và đã kết nối cơ sở dữ liệu Redis. Nếu vẫn không đăng nhập được, hãy nhập đúng mật khẩu: admin', true);
+                    else setLoginMsg(msgId, '⚠️ Máy chủ chạy nhưng CHƯA kết nối được Redis: ' + (data.redisError || '') + ' → làm bước thêm Redis (Storage → Upstash for Redis) rồi Redeploy.');
+                } else if (data && data.error) {
+                    setLoginMsg(msgId, '⚠️ ' + data.error + (res.status === 404 ? ' (máy chủ đang chạy bản cũ của api/index.js - hãy cập nhật file mới nhất)' : ''));
+                } else {
+                    setLoginMsg(msgId, '❌ ' + explainHttp(res.status, false));
+                }
+            } catch (e) {
+                setLoginMsg(msgId, '❌ Không kết nối được tới máy chủ: ' + (e && e.message ? e.message : 'lỗi mạng'));
+            }
+        }
+
+        window.verifyChatAdminPassword = async function() {
+            const passInput = document.getElementById('chatAdminPasswordInput');
+            if (!passInput) return;
+
+            try {
+                await apiPost('verify-password', { area: 'chat', password: passInput.value });
+                chatAdminPasswordMemory = passInput.value;
+                isChatAdminAuthenticated = true;
+                passInput.value = '';
+                setLoginMsg('chatAdminLoginMsg', '');
+                showToast('Mở khóa cấu hình link nhóm thành công!');
+                renderChatGroupTab();
+            } catch (e) {
+                setLoginMsg('chatAdminLoginMsg', loginErrorText(e));
+                showToast(loginErrorText(e), 'error');
+                passInput.focus();
+            }
+        }
+
+        window.lockChatAdminSession = function() {
+            isChatAdminAuthenticated = false;
+            chatAdminPasswordMemory = '';
+            const container = document.getElementById('classMessengerUrlConfigGrid');
+            if (container) container.innerHTML = '';
+            showToast('Đã khóa phiên quản trị Bước 4!');
+            renderChatGroupTab();
+        }
+
+        window.renderChatGroupTab = function() {
+            const gateEl = document.getElementById('chatAdminLoginGate');
+            const contentAreaEl = document.getElementById('chatAdminContentArea');
+
+            if (!gateEl || !contentAreaEl) return;
+
+            if (!isChatAdminAuthenticated) {
+                gateEl.classList.remove('hidden');
+                contentAreaEl.classList.add('hidden');
+                return;
+            }
+
+            gateEl.classList.add('hidden');
+            contentAreaEl.classList.remove('hidden');
+            renderChatConfigGrid();
+        }
+
+        window.verifyAdminPassword = async function() {
+            const passInput = document.getElementById('adminPasswordInput');
+            if (!passInput) return;
+
+            try {
+                await apiPost('verify-password', { area: 'student', password: passInput.value });
+                studentAdminPasswordMemory = passInput.value;
+                isAdminAuthenticated = true;
+                passInput.value = '';
+                setLoginMsg('adminLoginMsg', '');
+                showToast('Đăng nhập quản trị viên thành công!');
+                renderStudentMgmtTab();
+            } catch (e) {
+                setLoginMsg('adminLoginMsg', loginErrorText(e));
+                showToast(loginErrorText(e), 'error');
+                passInput.focus();
+            }
+        }
+
+        window.lockAdminSession = function() {
+            isAdminAuthenticated = false;
+            studentAdminPasswordMemory = '';
+            showToast('Đã khóa phiên quản trị!');
+            renderStudentMgmtTab();
+        }
+
+        window.resetForNewDay = async function() {
+            if (studentList.length === 0) {
+                showToast('Chưa có học sinh nào!', 'error');
+                return;
+            }
+            try {
+                await apiPost('admin-students', { password: studentAdminPasswordMemory, action: 'reset' });
+                await loadStudentsFromServer();
+                renderAll();
+                showToast('Đã khởi tạo chu kì mới cho toàn bộ học sinh!');
+            } catch (e) {
+                showToast(`❌ ${e.message}`, 'error');
+            }
+        }
+
+        window.handleBulkExcelImport = async function() {
+            const text = document.getElementById('excelPasteArea').value.trim();
+            if (!text) {
+                showToast('Vui lòng dán dữ liệu học sinh từ Excel vào ô!', 'error');
+                return;
+            }
+
+            const lines = text.split('\n');
+            const toImport = [];
+
+            lines.forEach(line => {
+                const parts = line.split('\t');
+                if (parts.length >= 1) {
+                    const name = parts[0].trim();
+                    let classId = parts[1] ? parts[1].trim().toUpperCase() : 'MAM_A';
+                    const parentInfo = parts[2] ? parts[2].trim() : 'Phụ huynh học sinh';
+
+                    const validClass = CLASSES.find(c => c.id === classId);
+                    if (!validClass) classId = 'MAM_A';
+
+                    if (name) {
+                        toImport.push({ name, classId, parentInfo });
+                    }
+                }
+            });
+
+            if (toImport.length === 0) {
+                showToast('Không tìm thấy dòng dữ liệu hợp lệ nào!', 'error');
+                return;
+            }
+
+            try {
+                await apiPost('admin-students', { password: studentAdminPasswordMemory, action: 'bulkImport', payload: toImport });
+                await loadStudentsFromServer();
+                document.getElementById('excelPasteArea').value = '';
+                showToast(`Đã nhập thành công ${toImport.length} học sinh!`);
+                renderAll();
+            } catch (e) {
+                showToast(`❌ ${e.message}`, 'error');
+            }
+        }
+
+        window.renderStudentMgmtTab = function() {
+            const gateEl = document.getElementById('adminLoginGate');
+            const contentAreaEl = document.getElementById('adminContentArea');
+
+            if (!gateEl || !contentAreaEl) return;
+
+            if (!isAdminAuthenticated) {
+                gateEl.classList.remove('hidden');
+                contentAreaEl.classList.add('hidden');
+                return;
+            }
+
+            gateEl.classList.add('hidden');
+            contentAreaEl.classList.remove('hidden');
+            renderBackupStatus();
+
+            const tbody = document.getElementById('studentMgmtTable');
+            const countEl = document.getElementById('totalSchoolStudentsCount');
+            const classSelect = document.getElementById('manualStudentClass');
+            if (!tbody) return;
+
+            if (classSelect && classSelect.options.length === 0) {
+                classSelect.innerHTML = CLASSES.map(c => `<option value="${c.id}">Lớp ${c.name} (${c.group})</option>`).join('');
+            }
+
+            if (countEl) countEl.innerText = `${studentList.length} học sinh`;
+
+            if (studentList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 font-medium">Chưa có học sinh. Hãy thêm thủ công hoặc dán dữ liệu Excel ở trên.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = studentList.map((st, idx) => {
+                const cls = CLASSES.find(c => c.id === st.classId);
+                const clsName = cls ? `${cls.name} (${cls.group})` : 'Chưa xếp lớp';
+
+                if (editingStudentId === st.id) {
+                    return `
+                    <tr class="bg-blue-50">
+                        <td class="p-3.5 text-center font-bold text-slate-500">${idx + 1}</td>
+                        <td class="p-2"><input type="text" id="editName_${st.id}" value="${st.name}" class="w-full p-1.5 text-xs font-bold border border-blue-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"></td>
+                        <td class="p-2">
+                            <select id="editClass_${st.id}" class="w-full p-1.5 text-xs font-bold border border-blue-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                                ${CLASSES.map(c => `<option value="${c.id}" ${c.id === st.classId ? 'selected' : ''}>${c.name} (${c.group})</option>`).join('')}
+                            </select>
+                        </td>
+                        <td class="p-2"><input type="text" id="editParent_${st.id}" value="${st.parentInfo || ''}" class="w-full p-1.5 text-xs border border-blue-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"></td>
+                        <td class="p-3.5 text-right space-x-1 whitespace-nowrap">
+                            <button onclick="saveEditStudent('${st.id}')" class="px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition">
+                                <i class="fa-solid fa-check mr-1"></i> Lưu
+                            </button>
+                            <button onclick="cancelEditStudent()" class="px-3 py-1 bg-slate-200 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-300 transition">
+                                Huỷ
+                            </button>
+                        </td>
+                    </tr>
+                    `;
+                }
+
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3.5 text-center font-bold text-slate-500">${idx + 1}</td>
+                        <td class="p-3.5 font-bold text-slate-900">${st.name}</td>
+                        <td class="p-3.5"><span class="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-100">${clsName}</span></td>
+                        <td class="p-3.5 text-xs text-slate-600">${maskPhoneNumbers(st.parentInfo) || 'Chưa nhập'}</td>
+                        <td class="p-3.5 text-right space-x-1 whitespace-nowrap">
+                            <button onclick="startEditStudent('${st.id}')" class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-200 transition">
+                                <i class="fa-solid fa-pen mr-1"></i> Sửa
+                            </button>
+                            <button onclick="deleteStudent('${st.id}')" class="px-3 py-1 bg-rose-100 text-rose-700 rounded-lg text-xs font-bold hover:bg-rose-200 transition">
+                                <i class="fa-solid fa-trash mr-1"></i> Xoá
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.startEditStudent = function(studentId) {
+            editingStudentId = studentId;
+            renderStudentMgmtTab();
+        }
+
+        window.cancelEditStudent = function() {
+            editingStudentId = null;
+            renderStudentMgmtTab();
+        }
+
+        window.saveEditStudent = async function(studentId) {
+            const student = studentList.find(s => String(s.id) === String(studentId));
+            if (!student) return;
+            const nameEl = document.getElementById(`editName_${studentId}`);
+            const classEl = document.getElementById(`editClass_${studentId}`);
+            const parentEl = document.getElementById(`editParent_${studentId}`);
+            const newName = nameEl.value.trim();
+            if (!newName) {
+                showToast('Tên học sinh không được để trống!', 'error');
+                return;
+            }
+            try {
+                await apiPost('admin-students', {
+                    password: studentAdminPasswordMemory, action: 'edit',
+                    payload: { id: studentId, name: newName, classId: classEl.value, parentInfo: parentEl.value.trim() }
+                });
+                await loadStudentsFromServer();
+                editingStudentId = null;
+                renderAll();
+                showToast(`Đã cập nhật thông tin bé ${newName}!`);
+            } catch (e) {
+                showToast(`❌ ${e.message}`, 'error');
+            }
+        }
+
+        window.handleManualAddStudent = async function() {
+            const nameInput = document.getElementById('manualStudentName');
+            const classSelect = document.getElementById('manualStudentClass');
+            const parentInput = document.getElementById('manualParentInfo');
+
+            const name = nameInput.value.trim();
+            const classId = classSelect.value;
+            const parentInputVal = parentInput.value.trim() || 'Phụ huynh học sinh';
+
+            if (!name) {
+                showToast('Vui lòng nhập họ tên học sinh!', 'error');
+                nameInput.focus();
+                return;
+            }
+
+            try {
+                await apiPost('admin-students', {
+                    password: studentAdminPasswordMemory, action: 'add',
+                    payload: { name, classId, parentInfo: parentInputVal }
+                });
+                await loadStudentsFromServer();
+                nameInput.value = '';
+                parentInput.value = '';
+                renderAll();
+                showToast(`Đã thêm học sinh ${name} thành công!`);
+            } catch (e) {
+                showToast(`❌ ${e.message}`, 'error');
+            }
+        }
+
+        window.deleteStudent = async function(studentId) {
+            const student = studentList.find(s => String(s.id) === String(studentId));
+            const displayName = student ? student.name : 'học sinh này';
+            if (!confirm(`Bạn có chắc muốn XOÁ vĩnh viễn bé "${displayName}" khỏi danh sách? Hành động này không thể hoàn tác!`)) {
+                return;
+            }
+            try {
+                await apiPost('admin-students', { password: studentAdminPasswordMemory, action: 'delete', payload: { id: studentId } });
+                await loadStudentsFromServer();
+                renderAll();
+                showToast('Đã xoá học sinh.');
+            } catch (e) {
+                showToast(`❌ ${e.message}`, 'error');
+            }
+        }
+
+        window.populateClassSelects = function() {
+            const selects = ['transferFromClass', 'transferToClass'];
+            selects.forEach(selectId => {
+                const el = document.getElementById(selectId);
+                if (!el) return;
+                el.innerHTML = CLASSES.map(c => `<option value="${c.id}">Lớp ${c.name} (${c.group})</option>`).join('');
+            });
+        }
+
+        window.showToast = function(message, type = 'success') {
+            const toast = document.getElementById('customToast');
+            const msgEl = document.getElementById('toastMessage');
+            const iconEl = document.getElementById('toastIcon');
+            if (!toast || !msgEl || !iconEl) return;
+
+            msgEl.innerText = message;
+            if (type === 'error') {
+                iconEl.className = "text-rose-400 text-xl";
+                iconEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i>';
+            } else {
+                iconEl.className = "text-emerald-400 text-xl";
+                iconEl.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, type === 'error' ? 6000 : 3200);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initFirebaseAndApp);
+        } else {
+            initFirebaseAndApp();
+        }
+    </script>
+    <!-- MODAL MẬT KHẨU GỬI NHANH -->
+    <div id="quickSendModal" class="hidden fixed inset-0 z-[999] bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-3">
+            <div class="font-black text-emerald-800 text-base">🔒 Gửi nhắc cho lớp <span id="quickSendModalClass">...</span></div>
+            <p class="text-xs text-slate-600">Nhập mật khẩu của lớp (hoặc mật khẩu admin) để mở nhóm chat. Link nhóm được giữ riêng tư.</p>
+            <input type="password" id="quickSendPasswordInput" placeholder="Mật khẩu của lớp hoặc mật khẩu admin..." autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go"
+                onkeydown="if(event.key==='Enter') confirmQuickSend()"
+                class="w-full p-3 bg-white border-2 border-emerald-300 rounded-xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500">
+            <div id="quickSendModalMsg" class="hidden p-2.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-700 text-xs font-bold"></div>
+            <div class="flex gap-2">
+                <button onclick="closeQuickSendModal()" class="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-200 transition">Hủy</button>
+                <button onclick="confirmQuickSend()" class="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition">Mở nhóm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LÝ DO BÁO NGHỈ -->
+    <div id="absenceReasonModal" class="hidden fixed inset-0 z-[999] bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4">
+            <div class="flex items-center gap-2 text-rose-700 font-black text-base">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>Lý do báo nghỉ cho bé <span id="absenceReasonModalName">...</span></span>
+            </div>
+            <textarea id="absenceReasonModalInput" rows="3" placeholder="Ví dụ: Bé bị sốt, gia đình có việc bận..." 
+                class="w-full p-3 bg-rose-50 border border-rose-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-rose-400 text-rose-900"></textarea>
+            <div class="flex gap-2">
+                <button onclick="skipAbsenceReasonModal()" class="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-200 transition">
+                    Bỏ qua
+                </button>
+                <button onclick="submitAbsenceReasonModal()" class="flex-1 py-2.5 bg-rose-600 text-white rounded-xl text-sm font-bold hover:bg-rose-700 transition">
+                    <i class="fa-solid fa-paper-plane mr-1"></i> Gửi
+                </button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
